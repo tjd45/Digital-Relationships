@@ -69,6 +69,8 @@
 		<input type="radio" name="periodPreset" value="Year"> Year
 	</p>
 
+	Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
+
 	<textarea id="result">
 	</textarea>
 
@@ -87,6 +89,20 @@
 		var day_in_ms = 86400000
 		var periodString = "Week"
 		var period = periods.Week
+
+		var userName = "Tom Davidson"
+
+		document.getElementById('update').onclick = function () {
+			var newUser = d3.select("#uname").property("value")
+			
+			if(newUser.length>0){
+				userName = newUser
+			}
+			
+			console.log(userName)
+
+			
+		}
 
 		d3.selectAll("input")
 			.on("click", function () {
@@ -509,10 +525,10 @@
 
 		function handleJson(rawJson, period) {
 
-			people = ["Tanmay Sukthankar"]
+			people = [userName]
 
 			for (person in rawJson.participants){
-				if(rawJson.participants[person].name!="Tanmay Sukthankar"){
+				if(rawJson.participants[person].name!=userName){
 					people.push(rawJson.participants[person].name)
 				}
 			}
@@ -557,7 +573,7 @@
 						thisMessLen = (thisMess.content ? thisMess.content.length : 0)
 					}
 
-					if (thisMess.sender_name === "Tanmay Sukthankar") {
+					if (thisMess.sender_name === userName) {
 
 						numSent++
 						if (sentMessCount[dayNum]) {
