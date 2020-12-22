@@ -509,10 +509,10 @@
 
 		function handleJson(rawJson, period) {
 
-			people = ["Tom Davidson"]
+			people = ["Tanmay Sukthankar"]
 
 			for (person in rawJson.participants){
-				if(rawJson.participants[person].name!="Tom Davidson"){
+				if(rawJson.participants[person].name!="Tanmay Sukthankar"){
 					people.push(rawJson.participants[person].name)
 				}
 			}
@@ -557,7 +557,7 @@
 						thisMessLen = (thisMess.content ? thisMess.content.length : 0)
 					}
 
-					if (thisMess.sender_name === "Tom Davidson") {
+					if (thisMess.sender_name === "Tanmay Sukthankar") {
 
 						numSent++
 						if (sentMessCount[dayNum]) {
