@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Digital Relationships: Thomas Davidson 2020</title>
+	<script type="text/javascript" src="d3.js"></script>
+	<style type="text/css">
+		.svg-graph {
+			background-color: black;
+		}
+
+		rect:hover {
+			fill: orange;
+		}
+
+		#tooltip {
+			position: absolute;
+			width: 300px;
+			height: auto;
+			padding: 10px;
+			background-color: white;
+			-webkit-border-radius: 10px;
+			-moz-border-radius: 10px;
+			border-radius: 10px;
+			-webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+			-moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+			box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+			pointer-events: none;
+		}
+
+		#tooltip.hidden {
+			display: none;
+		}
+
+		#tooltip p {
+			margin: 0;
+			font-family: sans-serif;
+			font-size: 16px;
+			line-height: 20px;
+			white-space: pre-wrap;
+		}
+
+		.axis path,
+		.axis line {
+			stroke: white;
+			shape-rendering: crispEdges;
+		}
+
+		.axis text {
+			fill: white;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="tooltip" class="hidden">
+		<p><span id="value">1000</span></p>
+	</div>
+	<input type="file" id="selectFiles" value="Import" /><br />
+	<button id="import">Import</button>
+	<button id="clear">Clear</button>
+
+	<p>
+		<input type="radio" name="periodPreset" value="Hour"> Hour
+		<input type="radio" name="periodPreset" value="Day"> Day
+		<input type="radio" name="periodPreset" value="Week" checked="true"> Week
+		<input type="radio" name="periodPreset" value="Month"> Month
+		<input type="radio" name="periodPreset" value="Year"> Year
+	</p>
+
+	<textarea id="result">
+	</textarea>
+
+	<script type="text/javascript">
+		var parseTime = d3.timeParse("%d/%m/%Y")
+		var fullTime = d3.timeFormat("%e %b %Y %X")
+		var fullShortTime = d3.timeFormat("%e %b %Y %I%p")
+		var justDate = d3.timeFormat("%e %b %Y")
+		var periods = {
+			Hour: 3600000,
+			Day: 86400000,
+			Week: 86400000 * 7,
+			Month: 86400000 * 30,
+			Year: 86400000 * 365
+		}
+		var day_in_ms = 86400000
+		var periodString = "Week"
+		var period = periods.Week
+
+		d3.selectAll("input")
+			.on("click", function () {
+
+				var view = d3.select(this).node().value;
+
+				if (periods[view]) {
+					clearGraph()
+					period = periods[view]
+					periodString = view
+
+					if (currentJson) {
+						var output = handleJson(currentJson, period)
+
+						setScales(output[0], output[1])
+
+						drawTopBars(output[0])
+
+						drawBottomBars(output[1])
+					}
+				}
+
+
+
+			})
+
+		function calcTooltipText(d) {
+			var thisString = ""
+			if (["Week", "Month", "Year"].includes(periodString)) {
+				thisString += justDate(firstTimestamp + (d.key * period)) + " to " + justDate(firstTimestamp + ((d.key + 1) * period))
+				thisString += "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
+			} else {
+				if (periodString === "Day") {
+					thisString += justDate(firstTimestamp + (d.key * period)) + "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
+				} else {
+					thisString += fullShortTime(firstTimestamp + (d.key * period)) + "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
+				}
+			}
+			return thisString
+		}
+
+		function printMessages(key) {
+			var total = sentMess[key].length + rcvMess[key].length
+
+			var scount = 0
+			var rcount = 0
+
+			console.log("-----------------------------")
+
+			for (var i = 0; i < total; i++) {
+				var r = false
+
+				if (scount > sentMess[key].length - 1) {
+					r = true
+				} else {
+					if (rcount > rcvMess[key].length - 1) {
+						r = false
+					} else {
+						if (sentMess[key][scount].timestamp < rcvMess[key][rcount].timestamp) {
+							r = false
+						} else {
+							r = true
+						}
+					}
+
+
+
+
+				}
+
+				if (r) {
+					printMessage(people[1],rcvMess[key][rcount])
+					rcount++
+					
+				} else {
+					printMessage(people[0],sentMess[key][scount])
+					scount++
+				}
+				
+
+
+			}
+
+
+		}
+
+		function printMessage(person,message){
+			console.log(fullTime(message.timestamp)+" "+person+": "+message.content)
+		}
+
+		var currentJson
+		function sameParticipants(j1, j2) {
+			if (j1) {
+
+
+				return arraysEqual(j1.participants, j2.participants)
+
+			} else {
+				return false
+			}
+		}
+
+		function arraysEqual(_arr1, _arr2) {
+			if (
+				!Array.isArray(_arr1)
+				|| !Array.isArray(_arr2)
+				|| _arr1.length !== _arr2.length
+			) {
+				return false;
+			}
+
+			const arr1 = _arr1.concat().sort();
+			const arr2 = _arr2.concat().sort();
+
+			for (let i = 0; i < arr1.length; i++) {
+				if (arr1[i].name !== arr2[i].name) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		function clearGraph() {
+			console.log("Clearing graph")
+			bottomBars.selectAll("*").remove()
+			topBars.selectAll("*").remove()
+		}
+
+		function firstAndLastTimestamps(j) {
+			var firstTimestamp = j.messages[j.messages.length - 1].timestamp_ms
+			var lastTimestamp = j.messages[0].timestamp_ms
+
+			return [firstTimestamp, lastTimestamp]
+		}
+
+		function combineJson(j1, j2) {
+			var oldDatats = firstAndLastTimestamps(j1)
+			var newDatats = firstAndLastTimestamps(j2)
+
+			//check if it comes before
+			if (newDatats[0] < oldDatats[0]) {
+				console.log("New data older")
+				var newMessages = j1.messages.concat(j2.messages)
+			} else {
+				if (newDatats[0] > oldDatats[1]) {
+					console.log("New data newer")
+					var newMessages = j2.messages.concat(j1.messages)
+				} else {
+					var newMessages = j1.messages
+				}
+			}
+
+			j1.messages = newMessages
+
+			return j1
+		}
+
+
+
+		var key = function (d) {
+			return d.key;
+		};
+
+		document.getElementById('clear').onclick = function () {
+			currentJson = undefined
+			clearGraph()
+		}
+
+		document.getElementById('import').onclick = function () {
+
+			var files = document.getElementById('selectFiles').files;
+
+			if (files.length <= 0) {
+				return false;
+			}
+
+			var fr = new FileReader();
+
+			fr.onload = function (e) {
+
+				var result = JSON.parse(e.target.result);
+
+				if (sameParticipants(currentJson, result)) {
+					clearGraph()
+					var newResult = combineJson(currentJson, result)
+					result = newResult
+				} else {
+					clearGraph()
+				}
+
+				currentJson = result
+
+				var formatted = JSON.stringify(result, null, 2);
+				document.getElementById('result').value = formatted;
+
+				var output = handleJson(result, period)
+
+				setScales(output[0], output[1])
+
+				drawTopBars(output[0])
+
+				drawBottomBars(output[1])
+
+
+			}
+
+			fr.readAsText(files.item(0));
+		};
+
+		var w = 1500;
+		var h = 1000;
+		var padding = 20;
+
+		var svg = d3.select("body")
+			.append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("class", "svg-graph");
+
+
+
+		var topBars = svg.append("g")
+			.attr("class", "top-bars")
+
+		var bottomBars = svg.append("g")
+			.attr("class", "bottom-bars")
+
+
+		function setScales(s, r) {
+
+
+			var maxSKey = d3.max(s, function (d) { return d.key; })
+			var maxRKey = d3.max(r, function (d) { return d.key; })
+
+			if (!maxSKey) maxSKey = 0
+			if (!maxRKey) maxRKey = 0
+
+
+			var maxKey = Math.max(maxSKey, maxRKey) + 1;
+
+
+
+
+			xScale = d3.scaleBand()
+				.domain(d3.range(maxKey))
+				.range([0, w])
+				.paddingInner(0.05);
+
+			svg.select(".axis").remove()
+
+			var gap = Math.floor(maxKey / 10)
+
+			if (gap == 0) {
+				gap++
+			}
+
+
+			var ticks = []
+			for (i = 0; i < maxKey; i += gap) {
+				ticks.push(i)
+			}
+
+			var xAxis = d3.axisBottom()
+				.scale(xScale)
+				.tickValues(ticks);
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (10) + ")")
+				.call(xAxis)
+
+			var maxSValue = d3.max(s, function (d) { return d.value; })
+			var maxRValue = d3.max(r, function (d) { return d.value; })
+
+			if (!maxSValue) maxSValue = 0
+			if (!maxRValue) maxRValue = 0
+
+			var maxValue = Math.max(maxSValue, maxRValue);
+
+			yScale = d3.scaleLinear()
+				.domain([0, maxValue])
+				.range([0, h / 2 - padding]);
+		}
+
+		function drawTopBars(dataToDraw) {
+
+
+			//draw the bars
+			topBars.selectAll("rect")
+				.data(dataToDraw, key)
+				.enter()
+				.append("rect")
+				.attr("x", function (d) {
+					return xScale(d.key);
+				})
+				.attr("y", function (d) {
+					return h / 2 - yScale(d.value);
+				})
+				.attr("width", xScale.bandwidth())
+				.attr("height", function (d) {
+					return yScale(d.value);
+				})
+				.attr("fill", function (d) {
+					return "rgb(0, 0, 255)";
+				})
+				.on("mouseover", function (d) {
+
+					//Get this bar's x/y values, then augment for the tooltip
+					var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
+					var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + h / 2;
+
+					//Update the tooltip position and value
+					d3.select("#tooltip")
+						.style("left", xPosition + "px")
+						.style("top", yPosition + "px")
+						.select("#value")
+						.text(calcTooltipText(d))
+
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+				})
+				.on("mouseout", function () {
+
+					//Hide the tooltip
+					d3.select("#tooltip").classed("hidden", true);
+
+				})
+				.on("click", function (d) {
+					printMessages(d.key)
+				});
+
+			//add the labels
+			// topBars.selectAll("text")
+			// 	.data(dataToDraw, key)
+			// 	.enter()
+			// 	.append("text")
+			// 	.text(function (d) {
+			// 		return d.value;
+			// 	})
+			// 	.attr("text-anchor", "middle")
+			// 	.attr("x", function (d) {
+			// 		return xScale(d.key) + xScale.bandwidth() / 2;
+			// 	})
+			// 	.attr("y", function (d) {
+			// 		return h / 2 - yScale(d.value) + 14;
+			// 	})
+			// 	.attr("font-family", "sans-serif")
+			// 	.attr("font-size", "11px")
+			// 	.attr("fill", "white");
+
+		}
+
+		function drawBottomBars(dataToDraw) {
+			//Create bottom bars
+			bottomBars.selectAll("rect")
+				.data(dataToDraw, key)
+				.enter()
+				.append("rect")
+				.attr("x", function (d, i) {
+					return xScale(d.key);
+				})
+				.attr("y", function (d) {
+					return h / 2;
+				})
+				.attr("width", xScale.bandwidth())
+				.attr("height", function (d) {
+
+					return yScale(d.value);
+				})
+				.attr("fill", function (d) {
+					return "rgb(0,255,0)";
+				})
+				.on("mouseover", function (d) {
+
+					//Get this bar's x/y values, then augment for the tooltip
+					var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
+					var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + h / 2;
+
+					//Update the tooltip position and value
+					d3.select("#tooltip")
+						.style("left", xPosition + "px")
+						.style("top", yPosition + "px")
+						.select("#value")
+						.text(calcTooltipText(d))
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+				})
+				.on("mouseout", function () {
+
+					//Hide the tooltip
+					d3.select("#tooltip").classed("hidden", true);
+
+				})
+				.on("click", function (d) {
+					printMessages(d.key)
+				});;
+
+			//Create bottom labels
+			// bottomBars.selectAll("text")
+			// 	.data(dataToDraw, key)
+			// 	.enter()
+			// 	.append("text")
+			// 	.text(function (d) {
+			// 		return d.value;
+			// 	})
+			// 	.attr("text-anchor", "middle")
+			// 	.attr("x", function (d, i) {
+			// 		return xScale(d.key) + xScale.bandwidth() / 2;
+			// 	})
+			// 	.attr("y", function (d) {
+			// 		return h / 2 + yScale(d.value) - 14;
+			// 	})
+			// 	.attr("font-family", "sans-serif")
+			// 	.attr("font-size", "11px")
+			// 	.attr("fill", "black");
+		}
+
+		function handleJson(rawJson, period) {
+
+			people = ["Tom Davidson"]
+
+			for (person in rawJson.participants){
+				if(rawJson.participants[person].name!="Tom Davidson"){
+					people.push(rawJson.participants[person].name)
+				}
+			}
+
+	
+
+			var numSent = 0
+			var numRcv = 0
+
+			//firstTimestamp = rawJson.messages[rawJson.messages.length - 1].timestamp_ms
+			firstTimestamp = Math.floor(rawJson.messages[rawJson.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
+
+			var actualFirstTimestamp = rawJson.messages[rawJson.messages.length - 1].timestamp_ms
+			var lastTimestamp = rawJson.messages[0].timestamp_ms
+
+			sentMessCount = {}
+			sentMess = {}
+			rcvMessCount = {}
+			rcvMess = {}
+
+			var indivMessages = true
+
+			console.log("First message: " + fullTime(actualFirstTimestamp))
+			console.log("Last Message: " + fullTime(lastTimestamp))
+
+			var oldTimestamp = 0
+
+			var thisMessLen = 0
+
+
+			for (var i = rawJson.messages.length - 1; i > -1; i--) {
+				var thisMess = rawJson.messages[i]
+
+				var dayNum = Math.floor((thisMess.timestamp_ms - firstTimestamp) / period)
+
+
+				if (thisMess.type === "Generic") {
+
+					if (indivMessages) {
+						thisMessLen = 1
+					} else {
+						thisMessLen = (thisMess.content ? thisMess.content.length : 0)
+					}
+
+					if (thisMess.sender_name === "Tom Davidson") {
+
+						numSent++
+						if (sentMessCount[dayNum]) {
+
+							sentMessCount[dayNum] = sentMessCount[dayNum] + thisMessLen
+							sentMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+
+						} else {
+							sentMessCount[dayNum] = thisMessLen
+							sentMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+						}
+
+
+					} else {
+						numRcv++
+						if (rcvMessCount[dayNum]) {
+							rcvMessCount[dayNum] = rcvMessCount[dayNum] + thisMessLen
+							rcvMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+						} else {
+							rcvMessCount[dayNum] = thisMessLen
+							rcvMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+						}
+					}
+				}
+
+			}
+
+			console.log("Messages sent: " + numSent);
+			console.log("Messages received: " + numRcv);
+
+			var sentMessArray = []
+			var rcvMessArray = []
+
+			for (var i in sentMessCount) {
+				sentMessArray.push({ key: parseInt(i), value: sentMessCount[i], messages: sentMess[i] })
+			}
+
+			for (var i in rcvMessCount) {
+				rcvMessArray.push({ key: parseInt(i), value: rcvMessCount[i], messages: rcvMess[i] })
+			}
+
+			return [sentMessArray, rcvMessArray]
+
+
+		}
+
+
+	</script>
+
+</body>
+
+</html>
