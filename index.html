@@ -145,7 +145,19 @@
 		}
 
 		function printMessages(key) {
-			var total = sentMess[key].length + rcvMess[key].length
+			var sLength = 0
+			var rLength = 0
+
+			if(sentMess[key]){
+				sLength = sentMess[key].length
+			}
+
+			if(rcvMess[key]){
+				rLength = rcvMess[key].length
+			}
+			console.log(sLength,rLength)
+
+			var total = sLength + rLength
 
 			var scount = 0
 			var rcount = 0
@@ -155,10 +167,10 @@
 			for (var i = 0; i < total; i++) {
 				var r = false
 
-				if (scount > sentMess[key].length - 1) {
+				if (scount > sLength - 1) {
 					r = true
 				} else {
-					if (rcount > rcvMess[key].length - 1) {
+					if (rcount > rLength - 1) {
 						r = false
 					} else {
 						if (sentMess[key][scount].timestamp < rcvMess[key][rcount].timestamp) {
@@ -368,7 +380,8 @@
 
 			var xAxis = d3.axisBottom()
 				.scale(xScale)
-				.tickValues(ticks);
+				.tickValues(ticks)
+				.tickFormat(d => (justDate(firstTimestamp+(d*period))));
 
 			svg.append("g")
 				.attr("class", "axis")
