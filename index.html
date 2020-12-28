@@ -50,6 +50,24 @@
 		.axis text {
 			fill: white;
 		}
+
+		.controlsLeft {
+			float: left;
+			margin-right:20px;
+		
+		}
+
+		.controlsRight {
+			
+			margin-bottom: 150px;
+			
+		}
+		.floated{
+			float:left;
+			margin-right:5px;
+		}
+
+		
 	</style>
 </head>
 
@@ -57,28 +75,51 @@
 	<div id="tooltip" class="hidden">
 		<p><span id="value">1000</span></p>
 	</div>
-	<input type="file" id="selectFiles" value="Import" /><br />
-	<button id="import">Import</button>
-	<button id="clear">Clear</button>
+	
+	<div class="controlsLeft">
+		<input type="file" id="selectFiles" value="Import" /><br />
+		<button id="import">Import</button>
+		<button id="clear">Clear</button>
 
-	<p>
-		<input type="radio" name="periodPreset" value="Hour"> Hour
-		<input type="radio" name="periodPreset" value="Day"> Day
-		<input type="radio" name="periodPreset" value="Week" checked="true"> Week
-		<input type="radio" name="periodPreset" value="Month"> Month
-		<input type="radio" name="periodPreset" value="Year"> Year
-	</p>
+		<p>
+			<input type="radio" name="periodPreset" value="Hour"> Hour
+			<input type="radio" name="periodPreset" value="Day"> Day
+			<input type="radio" name="periodPreset" value="Week" checked="true"> Week
+			<input type="radio" name="periodPreset" value="Month"> Month
+			<input type="radio" name="periodPreset" value="Year"> Year
+		</p>
 
-	Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
+		Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
 
-	<textarea id="result">
-	</textarea>
+
+		<textarea id="result">
+		</textarea>
+
+	</div>
+	<div class="controlsRight">
+		<br/><br/><br/>
+		<label class="floated" for="startDate">Start Date:</label>
+		<input class="floated" type="date" id="startDate" name="startDate">
+		<label class="floated" for="endDate">End Date:</label>
+		<input class="floated" type="date" id="endDate" name="endDate">
+
+		<button id="updateDates" class="floated">Update Dates</button>
+
+	</div>
+
+		
+	
+
+
+
 
 	<script type="text/javascript">
 		var parseTime = d3.timeParse("%d/%m/%Y")
+
 		var fullTime = d3.timeFormat("%e %b %Y %X")
 		var fullShortTime = d3.timeFormat("%e %b %Y %I%p")
 		var justDate = d3.timeFormat("%e %b %Y")
+		var datePickerFormat = d3.timeFormat("%Y-%m-%d")
 		var periods = {
 			Hour: 3600000,
 			Day: 86400000,
@@ -94,21 +135,39 @@
 
 		document.getElementById('update').onclick = function () {
 			var newUser = d3.select("#uname").property("value")
-			
-			if(newUser.length>0){
+
+			if (newUser.length > 0) {
 				userName = newUser
 			}
-			
+
 			console.log(userName)
 
-			
+
 		}
 
-		d3.selectAll("input")
+		d3.select("#updateDates")
+			.on("click",function(){
+				clearGraph()
+				startTS = new Date(document.getElementById("startDate").value).getTime()
+				endTS = new Date(document.getElementById("endDate").value).getTime()
+
+				firstTimestamp = startTS
+				lastTimestamp = endTS
+				var output = handleJson(currentJson, period)
+
+				setScales(output[0], output[1])
+
+				drawTopBars(output[0])
+
+				drawBottomBars(output[1])
+
+
+
+			})
+
+		d3.selectAll("input[name='periodPreset']")
 			.on("click", function () {
-
 				var view = d3.select(this).node().value;
-
 				if (periods[view]) {
 					clearGraph()
 					period = periods[view]
@@ -133,14 +192,14 @@
 			var thisString = ""
 			if (["Week", "Month", "Year"].includes(periodString)) {
 				thisString += justDate(firstTimestamp + (d.key * period)) + " to " + justDate(firstTimestamp + ((d.key + 1) * period))
-				thisString += "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
 			} else {
 				if (periodString === "Day") {
-					thisString += justDate(firstTimestamp + (d.key * period)) + "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
+					thisString += justDate(firstTimestamp + (d.key * period))
 				} else {
-					thisString += fullShortTime(firstTimestamp + (d.key * period)) + "\n" + sentMessCount[d.key] + " messages sent, " + rcvMessCount[d.key] + " received"
+					thisString += fullShortTime(firstTimestamp + (d.key * period))
 				}
 			}
+			thisString += "\n" + (sentMessCount[d.key] ? sentMessCount[d.key] : 0) + " messages sent, " + (rcvMessCount[d.key] ? rcvMessCount[d.key] : 0) + " received"
 			return thisString
 		}
 
@@ -148,14 +207,13 @@
 			var sLength = 0
 			var rLength = 0
 
-			if(sentMess[key]){
+			if (sentMess[key]) {
 				sLength = sentMess[key].length
 			}
 
-			if(rcvMess[key]){
+			if (rcvMess[key]) {
 				rLength = rcvMess[key].length
 			}
-			console.log(sLength,rLength)
 
 			var total = sLength + rLength
 
@@ -186,14 +244,14 @@
 				}
 
 				if (r) {
-					printMessage(people[1],rcvMess[key][rcount])
+					printMessage(people[1], rcvMess[key][rcount])
 					rcount++
-					
+
 				} else {
-					printMessage(people[0],sentMess[key][scount])
+					printMessage(people[0], sentMess[key][scount])
 					scount++
 				}
-				
+
 
 
 			}
@@ -201,8 +259,8 @@
 
 		}
 
-		function printMessage(person,message){
-			console.log(fullTime(message.timestamp)+" "+person+": "+message.content)
+		function printMessage(person, message) {
+			console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
 		}
 
 		var currentJson
@@ -273,6 +331,25 @@
 			return j1
 		}
 
+		function getFirstAndLastDays(j){
+			var firstDay = Math.floor(j.messages[j.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
+			var lastDay = Math.floor(j.messages[0].timestamp_ms / (day_in_ms) + 1) * day_in_ms
+
+			return [firstDay,lastDay]
+		}
+
+		function updateDateRange(j){
+			var FandL = firstAndLastTimestamps(j)
+			var firstDay = Math.floor(FandL[0] / (day_in_ms)) * day_in_ms
+			var lastDay = Math.floor(FandL[1] / (day_in_ms) + 1) * day_in_ms
+
+			d3.select("#startDate").property("value",datePickerFormat(firstDay))
+			d3.select("#endDate").property("value",datePickerFormat(lastDay))
+
+				
+			firstTimestamp = FandL[0]
+			lastTimestamp = FandL[1]
+		}
 
 
 		var key = function (d) {
@@ -310,6 +387,16 @@
 
 				var formatted = JSON.stringify(result, null, 2);
 				document.getElementById('result').value = formatted;
+
+				updateDateRange(result)
+				// FandL = getFirstAndLastDays(result)
+				// d3.select("#startDate").attr("value",datePickerFormat(FandL[0]))
+				// d3.select("#endDate").attr("value",datePickerFormat(FandL[1]))
+
+				// fandl = firstAndLastTimestamps(result)
+				// firstTimestamp = fandl[0]
+				// lastTimestamp = fandl[1]
+
 
 				var output = handleJson(result, period)
 
@@ -381,7 +468,7 @@
 			var xAxis = d3.axisBottom()
 				.scale(xScale)
 				.tickValues(ticks)
-				.tickFormat(d => (justDate(firstTimestamp+(d*period))));
+				.tickFormat(d => (justDate(firstTimestamp + (d * period))));
 
 			svg.append("g")
 				.attr("class", "axis")
@@ -540,22 +627,26 @@
 
 			people = [userName]
 
-			for (person in rawJson.participants){
-				if(rawJson.participants[person].name!=userName){
+			for (person in rawJson.participants) {
+				if (rawJson.participants[person].name != userName) {
 					people.push(rawJson.participants[person].name)
 				}
 			}
 
-	
+
 
 			var numSent = 0
 			var numRcv = 0
 
-			//firstTimestamp = rawJson.messages[rawJson.messages.length - 1].timestamp_ms
-			firstTimestamp = Math.floor(rawJson.messages[rawJson.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
+			
+			// firstTimestamp = Math.floor(rawJson.messages[rawJson.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
+			// lastTimestamp = Math.floor(rawJson.messages[0].timestamp_ms / (day_in_ms) + 1) * day_in_ms
 
-			var actualFirstTimestamp = rawJson.messages[rawJson.messages.length - 1].timestamp_ms
-			var lastTimestamp = rawJson.messages[0].timestamp_ms
+			
+
+			var actualFirstTimestamp
+			var actualLastTimestamp
+
 
 			sentMessCount = {}
 			sentMess = {}
@@ -564,21 +655,34 @@
 
 			var indivMessages = true
 
-			console.log("First message: " + fullTime(actualFirstTimestamp))
-			console.log("Last Message: " + fullTime(lastTimestamp))
+			var firstSet = false
+
+			var lastDayNum = Math.floor((lastTimestamp - firstTimestamp) / period)
 
 			var oldTimestamp = 0
 
 			var thisMessLen = 0
 
+			//First message: 30 Jan 2020 10:22:32 AM
+			// Last Message: 20 Nov 2020 1:08:03 AM
+
 
 			for (var i = rawJson.messages.length - 1; i > -1; i--) {
+				
 				var thisMess = rawJson.messages[i]
 
 				var dayNum = Math.floor((thisMess.timestamp_ms - firstTimestamp) / period)
 
 
-				if (thisMess.type === "Generic") {
+				if (dayNum >= 0 && dayNum <= lastDayNum && thisMess.type === "Generic") {
+		
+					if(!firstSet){
+				
+						actualFirstTimestamp = thisMess.timestamp_ms
+						firstSet = true
+					}
+					actualLastTimestamp = thisMess.timestamp_ms
+
 
 					if (indivMessages) {
 						thisMessLen = 1
@@ -613,6 +717,9 @@
 				}
 
 			}
+
+			console.log("First message: " + fullTime(actualFirstTimestamp))
+			console.log("Last Message: " + fullTime(actualLastTimestamp))
 
 			console.log("Messages sent: " + numSent);
 			console.log("Messages received: " + numRcv);
