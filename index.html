@@ -59,12 +59,16 @@
 
 		.controlsRight {
 			
-			margin-bottom: 150px;
+			margin-bottom: 50px;
 			
 		}
 		.floated{
 			float:left;
 			margin-right:5px;
+		}
+		#summaryText{
+			white-space: pre-wrap;
+
 		}
 
 		
@@ -92,18 +96,25 @@
 		Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
 
 
-		<textarea id="result">
-		</textarea>
+		<!-- <textarea id="result">
+		</textarea> -->
 
 	</div>
 	<div class="controlsRight">
-		<br/><br/><br/>
+		<p>
+			<input type="radio" name="messagesOrCharacters" value="Messages" checked="true"> Individual Messages
+			<input type="radio" name="messagesOrCharacters" value="Characters"> Total Characters
+		</p>
+		
 		<label class="floated" for="startDate">Start Date:</label>
 		<input class="floated" type="date" id="startDate" name="startDate">
 		<label class="floated" for="endDate">End Date:</label>
 		<input class="floated" type="date" id="endDate" name="endDate">
 
 		<button id="updateDates" class="floated">Update Dates</button>
+
+		<br/>
+		<p id="summaryText"> </p>
 
 	</div>
 
@@ -130,6 +141,8 @@
 		var day_in_ms = 86400000
 		var periodString = "Week"
 		var period = periods.Week
+
+		var indivMessages = true
 
 		var userName = "Tom Davidson"
 
@@ -188,8 +201,35 @@
 
 			})
 
+			d3.selectAll("input[name='messagesOrCharacters']")
+			.on("click", function () {
+				var view = d3.select(this).node().value;
+				if(view == "Messages"){
+					indivMessages = true
+				}else{
+					indivMessages = false
+				}
+				
+				if(currentJson){
+					clearGraph()
+
+					var output = handleJson(currentJson, period)
+
+					setScales(output[0], output[1])
+
+					drawTopBars(output[0])
+
+					drawBottomBars(output[1])
+				}
+
+
+
+			})
+
 		function calcTooltipText(d) {
 			var thisString = ""
+			var CorM = indivMessages ? "messages" : "characters"
+
 			if (["Week", "Month", "Year"].includes(periodString)) {
 				thisString += justDate(firstTimestamp + (d.key * period)) + " to " + justDate(firstTimestamp + ((d.key + 1) * period))
 			} else {
@@ -199,7 +239,7 @@
 					thisString += fullShortTime(firstTimestamp + (d.key * period))
 				}
 			}
-			thisString += "\n" + (sentMessCount[d.key] ? sentMessCount[d.key] : 0) + " messages sent, " + (rcvMessCount[d.key] ? rcvMessCount[d.key] : 0) + " received"
+			thisString += "\n" + (sentMessCount[d.key] ? sentMessCount[d.key] : 0) + " "+CorM+" sent, " + (rcvMessCount[d.key] ? rcvMessCount[d.key] : 0) + " received"
 			return thisString
 		}
 
@@ -385,8 +425,8 @@
 
 				currentJson = result
 
-				var formatted = JSON.stringify(result, null, 2);
-				document.getElementById('result').value = formatted;
+				// var formatted = JSON.stringify(result, null, 2);
+				// document.getElementById('result').value = formatted;
 
 				updateDateRange(result)
 				// FandL = getFirstAndLastDays(result)
@@ -637,6 +677,8 @@
 
 			var numSent = 0
 			var numRcv = 0
+			var numCharSent = 0
+			var numCharRcv = 0
 
 			
 			// firstTimestamp = Math.floor(rawJson.messages[rawJson.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
@@ -653,8 +695,6 @@
 			rcvMessCount = {}
 			rcvMess = {}
 
-			var indivMessages = true
-
 			var firstSet = false
 
 			var lastDayNum = Math.floor((lastTimestamp - firstTimestamp) / period)
@@ -662,6 +702,7 @@
 			var oldTimestamp = 0
 
 			var thisMessLen = 0
+			var charCounter = 0
 
 			//First message: 30 Jan 2020 10:22:32 AM
 			// Last Message: 20 Nov 2020 1:08:03 AM
@@ -675,7 +716,9 @@
 
 
 				if (dayNum >= 0 && dayNum <= lastDayNum && thisMess.type === "Generic") {
-		
+					
+					charCounter = (thisMess.content ? thisMess.content.length : 0)
+
 					if(!firstSet){
 				
 						actualFirstTimestamp = thisMess.timestamp_ms
@@ -693,6 +736,7 @@
 					if (thisMess.sender_name === userName) {
 
 						numSent++
+						numCharSent += charCounter
 						if (sentMessCount[dayNum]) {
 
 							sentMessCount[dayNum] = sentMessCount[dayNum] + thisMessLen
@@ -706,6 +750,7 @@
 
 					} else {
 						numRcv++
+						numCharRcv+=charCounter
 						if (rcvMessCount[dayNum]) {
 							rcvMessCount[dayNum] = rcvMessCount[dayNum] + thisMessLen
 							rcvMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
@@ -718,6 +763,10 @@
 
 			}
 
+			d3.select("#summaryText").text("First message: " + fullTime(actualFirstTimestamp)+
+			", Last message: "+ fullTime(actualLastTimestamp) + "\nMessages sent: " + numSent+
+			", Messages received: " + numRcv +"\nCharacters sent: " + numCharSent+
+			", Characters received: " + numCharRcv)
 			console.log("First message: " + fullTime(actualFirstTimestamp))
 			console.log("Last Message: " + fullTime(actualLastTimestamp))
 
