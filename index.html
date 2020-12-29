@@ -8,6 +8,8 @@
 	<style type="text/css">
 		.svg-graph {
 			background-color: black;
+			display: block;
+			margin-bottom: 20px;
 		}
 
 		rect:hover {
@@ -70,6 +72,9 @@
 			white-space: pre-wrap;
 
 		}
+		/* #messageBox{
+			width: 1500px;
+		} */
 
 		
 	</style>
@@ -244,6 +249,7 @@
 		}
 
 		function printMessages(key) {
+			document.getElementById('messageBox').value = ""
 			var sLength = 0
 			var rLength = 0
 
@@ -260,7 +266,7 @@
 			var scount = 0
 			var rcount = 0
 
-			console.log("-----------------------------")
+			// console.log("-----------------------------")
 
 			for (var i = 0; i < total; i++) {
 				var r = false
@@ -300,7 +306,8 @@
 		}
 
 		function printMessage(person, message) {
-			console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
+			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + person + ": " + message.content +"\n"
+			// console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
 		}
 
 		var currentJson
@@ -338,6 +345,7 @@
 
 		function clearGraph() {
 			console.log("Clearing graph")
+			document.getElementById('messageBox').value = ""
 			bottomBars.selectAll("*").remove()
 			topBars.selectAll("*").remove()
 		}
@@ -427,7 +435,7 @@
 
 				// var formatted = JSON.stringify(result, null, 2);
 				// document.getElementById('result').value = formatted;
-
+				
 				updateDateRange(result)
 				// FandL = getFirstAndLastDays(result)
 				// d3.select("#startDate").attr("value",datePickerFormat(FandL[0]))
@@ -470,6 +478,11 @@
 		var bottomBars = svg.append("g")
 			.attr("class", "bottom-bars")
 
+		var messageBox = d3.select("body")
+						.append("textarea")
+						.attr("readonly",true)
+						.attr("id","messageBox")
+						.style("width", w+"px")
 
 		function setScales(s, r) {
 
@@ -767,11 +780,11 @@
 			", Last message: "+ fullTime(actualLastTimestamp) + "\nMessages sent: " + numSent+
 			", Messages received: " + numRcv +"\nCharacters sent: " + numCharSent+
 			", Characters received: " + numCharRcv)
-			console.log("First message: " + fullTime(actualFirstTimestamp))
-			console.log("Last Message: " + fullTime(actualLastTimestamp))
+			// console.log("First message: " + fullTime(actualFirstTimestamp))
+			// console.log("Last Message: " + fullTime(actualLastTimestamp))
 
-			console.log("Messages sent: " + numSent);
-			console.log("Messages received: " + numRcv);
+			// console.log("Messages sent: " + numSent);
+			// console.log("Messages received: " + numRcv);
 
 			var sentMessArray = []
 			var rcvMessArray = []
