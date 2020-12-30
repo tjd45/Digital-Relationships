@@ -6,13 +6,17 @@
 	<title>Digital Relationships: Thomas Davidson 2020</title>
 	<script type="text/javascript" src="d3.js"></script>
 	<style type="text/css">
-		.svg-graph {
+		#svg-graph {
 			background-color: black;
 			display: block;
 			margin-bottom: 20px;
 		}
 
 		rect:hover {
+			fill: orange;
+		}
+
+		path:hover {
 			fill: orange;
 		}
 
@@ -53,30 +57,38 @@
 			fill: white;
 		}
 
+		.controls {
+			display: block;
+			margin-bottom: 50px;
+		}
+
 		.controlsLeft {
 			float: left;
-			margin-right:20px;
-		
+			margin-right: 20px;
+
 		}
 
 		.controlsRight {
-			
-			margin-bottom: 50px;
-			
+
+			margin-bottom: 0px;
+
 		}
-		.floated{
-			float:left;
-			margin-right:5px;
+
+		.floated {
+			float: left;
+			margin-right: 5px;
 		}
-		#summaryText{
+
+		#summaryText {
 			white-space: pre-wrap;
 
 		}
+
+
+
 		/* #messageBox{
 			width: 1500px;
 		} */
-
-		
 	</style>
 </head>
 
@@ -84,47 +96,54 @@
 	<div id="tooltip" class="hidden">
 		<p><span id="value">1000</span></p>
 	</div>
-	
-	<div class="controlsLeft">
-		<input type="file" id="selectFiles" value="Import" /><br />
-		<button id="import">Import</button>
-		<button id="clear">Clear</button>
 
-		<p>
-			<input type="radio" name="periodPreset" value="Hour"> Hour
-			<input type="radio" name="periodPreset" value="Day"> Day
-			<input type="radio" name="periodPreset" value="Week" checked="true"> Week
-			<input type="radio" name="periodPreset" value="Month"> Month
-			<input type="radio" name="periodPreset" value="Year"> Year
-		</p>
+	<div class="controls">
+		<div class="controlsLeft">
+			<input type="file" id="selectFiles" value="Import" /><br />
+			<button id="import">Import</button>
+			<button id="clear">Clear</button>
 
-		Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
+			<p>
+				<input type="radio" name="periodPreset" value="Hour"> Hour
+				<input type="radio" name="periodPreset" value="Day"> Day
+				<input type="radio" name="periodPreset" value="Week" checked="true"> Week
+				<input type="radio" name="periodPreset" value="Month"> Month
+				<input type="radio" name="periodPreset" value="Year"> Year
+			</p>
+
+			Your Name: <input type="text" id="uname" name="uname"> <button id="update">Update</button> <br><br>
 
 
-		<!-- <textarea id="result">
+			<p>
+				<input type="radio" name="clockOrTimeline" value="Timeline" checked="true"> Timeline
+				<input type="radio" name="clockOrTimeline" value="Clock"> Clock
+			</p>
+
+			<!-- <textarea id="result">
 		</textarea> -->
 
+		</div>
+		<div class="controlsRight">
+			<p>
+				<input type="radio" name="messagesOrCharacters" value="Messages" checked="true"> Individual Messages
+				<input type="radio" name="messagesOrCharacters" value="Characters"> Total Characters
+			</p>
+
+			<label class="floated" for="startDate">Start Date:</label>
+			<input class="floated" type="date" id="startDate" name="startDate">
+			<label class="floated" for="endDate">End Date:</label>
+			<input class="floated" type="date" id="endDate" name="endDate">
+
+			<button id="updateDates" class="floated">Update Dates</button>
+
+			<br />
+			<p id="summaryText"></p>
+
+		</div>
 	</div>
-	<div class="controlsRight">
-		<p>
-			<input type="radio" name="messagesOrCharacters" value="Messages" checked="true"> Individual Messages
-			<input type="radio" name="messagesOrCharacters" value="Characters"> Total Characters
-		</p>
-		
-		<label class="floated" for="startDate">Start Date:</label>
-		<input class="floated" type="date" id="startDate" name="startDate">
-		<label class="floated" for="endDate">End Date:</label>
-		<input class="floated" type="date" id="endDate" name="endDate">
 
-		<button id="updateDates" class="floated">Update Dates</button>
 
-		<br/>
-		<p id="summaryText"> </p>
 
-	</div>
-
-		
-	
 
 
 
@@ -143,11 +162,19 @@
 			Month: 86400000 * 30,
 			Year: 86400000 * 365
 		}
+
+		var hourRangeStrings = [
+			"Midnight to 1 am", "1am to 2am", "2am to 3am", "3am to 4am", "4am to 5am", "5am to 6am", "6am to 7am",
+			"7am to 8am", "8am to 9am", "9am to 10am", "10am to 11am", "11am to Midday", "Midday to 1pm", "1pm to 2pm",
+			"2pm to 3pm", "3pm to 4pm", "4pm to 5pm", "5pm to 6pm", "6pm to 7pm", "7pm to 8pm", "8pm to 9pm", "9pm to 10pm",
+			"10pm to 11pm", "11pm to Midnight"
+		]
 		var day_in_ms = 86400000
 		var periodString = "Week"
 		var period = periods.Week
 
 		var indivMessages = true
+		var timeline = true
 
 		var userName = "Tom Davidson"
 
@@ -163,21 +190,17 @@
 
 		}
 
+
+
 		d3.select("#updateDates")
-			.on("click",function(){
-				clearGraph()
+			.on("click", function () {
+
 				startTS = new Date(document.getElementById("startDate").value).getTime()
 				endTS = new Date(document.getElementById("endDate").value).getTime()
 
 				firstTimestamp = startTS
 				lastTimestamp = endTS
-				var output = handleJson(currentJson, period)
-
-				setScales(output[0], output[1])
-
-				drawTopBars(output[0])
-
-				drawBottomBars(output[1])
+				redraw(currentJson)
 
 
 
@@ -187,18 +210,12 @@
 			.on("click", function () {
 				var view = d3.select(this).node().value;
 				if (periods[view]) {
-					clearGraph()
+
 					period = periods[view]
 					periodString = view
 
 					if (currentJson) {
-						var output = handleJson(currentJson, period)
-
-						setScales(output[0], output[1])
-
-						drawTopBars(output[0])
-
-						drawBottomBars(output[1])
+						redraw(currentJson)
 					}
 				}
 
@@ -206,45 +223,65 @@
 
 			})
 
-			d3.selectAll("input[name='messagesOrCharacters']")
+		d3.selectAll("input[name='messagesOrCharacters']")
 			.on("click", function () {
 				var view = d3.select(this).node().value;
-				if(view == "Messages"){
+				if (view == "Messages") {
 					indivMessages = true
-				}else{
+				} else {
 					indivMessages = false
 				}
-				
-				if(currentJson){
-					clearGraph()
 
-					var output = handleJson(currentJson, period)
-
-					setScales(output[0], output[1])
-
-					drawTopBars(output[0])
-
-					drawBottomBars(output[1])
+				if (currentJson) {
+					redraw(currentJson)
 				}
 
 
 
 			})
 
-		function calcTooltipText(d) {
+		d3.selectAll("input[name='clockOrTimeline']")
+			.on("click", function () {
+				var view = d3.select(this).node().value;
+				if (view == "Clock") {
+					timeline = false
+				} else {
+					timeline = true
+				}
+
+				if (currentJson) {
+					redraw(currentJson)
+				}
+
+
+
+
+			})
+
+		function calcTooltipText(d, i) {
 			var thisString = ""
 			var CorM = indivMessages ? "messages" : "characters"
 
-			if (["Week", "Month", "Year"].includes(periodString)) {
-				thisString += justDate(firstTimestamp + (d.key * period)) + " to " + justDate(firstTimestamp + ((d.key + 1) * period))
-			} else {
-				if (periodString === "Day") {
-					thisString += justDate(firstTimestamp + (d.key * period))
+			if (timeline) {
+				if (["Week", "Month", "Year"].includes(periodString)) {
+					thisString += justDate(firstTimestamp + (d.key * period)) + " to " + justDate(firstTimestamp + ((d.key + 1) * period))
 				} else {
-					thisString += fullShortTime(firstTimestamp + (d.key * period))
+					if (periodString === "Day") {
+						thisString += justDate(firstTimestamp + (d.key * period))
+					} else {
+						thisString += fullShortTime(firstTimestamp + (d.key * period))
+					}
+				}
+				thisString += "\n" + (sentMessCount[d.key] ? sentMessCount[d.key] : 0) + " " + CorM + " sent, " + (rcvMessCount[d.key] ? rcvMessCount[d.key] : 0) + " received"
+			} else {
+				thisString += "Hour " + i + " : " + hourRangeStrings[i] +
+
+					"\n" + (d[2] == 0 ? d[0] : d[1]) + " " + CorM + " sent, " + (d[2] == 0 ? d[1] : d[0]) + " received";
+
+				if (d[2] == 0) {
+
 				}
 			}
-			thisString += "\n" + (sentMessCount[d.key] ? sentMessCount[d.key] : 0) + " "+CorM+" sent, " + (rcvMessCount[d.key] ? rcvMessCount[d.key] : 0) + " received"
 			return thisString
 		}
 
@@ -306,7 +343,7 @@
 		}
 
 		function printMessage(person, message) {
-			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + person + ": " + message.content +"\n"
+			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + person + ": " + message.content + "\n"
 			// console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
 		}
 
@@ -345,6 +382,8 @@
 
 		function clearGraph() {
 			console.log("Clearing graph")
+			clock.selectAll("*").remove()
+			svg.selectAll(".axis").remove()
 			document.getElementById('messageBox').value = ""
 			bottomBars.selectAll("*").remove()
 			topBars.selectAll("*").remove()
@@ -379,22 +418,22 @@
 			return j1
 		}
 
-		function getFirstAndLastDays(j){
+		function getFirstAndLastDays(j) {
 			var firstDay = Math.floor(j.messages[j.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
 			var lastDay = Math.floor(j.messages[0].timestamp_ms / (day_in_ms) + 1) * day_in_ms
 
-			return [firstDay,lastDay]
+			return [firstDay, lastDay]
 		}
 
-		function updateDateRange(j){
+		function updateDateRange(j) {
 			var FandL = firstAndLastTimestamps(j)
 			var firstDay = Math.floor(FandL[0] / (day_in_ms)) * day_in_ms
 			var lastDay = Math.floor(FandL[1] / (day_in_ms) + 1) * day_in_ms
 
-			d3.select("#startDate").property("value",datePickerFormat(firstDay))
-			d3.select("#endDate").property("value",datePickerFormat(lastDay))
+			d3.select("#startDate").property("value", datePickerFormat(firstDay))
+			d3.select("#endDate").property("value", datePickerFormat(lastDay))
 
-				
+
 			firstTimestamp = FandL[0]
 			lastTimestamp = FandL[1]
 		}
@@ -424,18 +463,16 @@
 				var result = JSON.parse(e.target.result);
 
 				if (sameParticipants(currentJson, result)) {
-					clearGraph()
+
 					var newResult = combineJson(currentJson, result)
 					result = newResult
-				} else {
-					clearGraph()
 				}
 
 				currentJson = result
 
 				// var formatted = JSON.stringify(result, null, 2);
 				// document.getElementById('result').value = formatted;
-				
+
 				updateDateRange(result)
 				// FandL = getFirstAndLastDays(result)
 				// d3.select("#startDate").attr("value",datePickerFormat(FandL[0]))
@@ -446,13 +483,7 @@
 				// lastTimestamp = fandl[1]
 
 
-				var output = handleJson(result, period)
-
-				setScales(output[0], output[1])
-
-				drawTopBars(output[0])
-
-				drawBottomBars(output[1])
+				redraw(result)
 
 
 			}
@@ -468,9 +499,13 @@
 			.append("svg")
 			.attr("width", w)
 			.attr("height", h)
-			.attr("class", "svg-graph");
+			.attr("id", "svg-graph");
 
+		var clock = svg.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h / 2 + ")")
 
+		d3.select("#summaryText").text("Message between \nFirst message: ,Last message: \nMessages sent: " +
+			", Messages received: \nCharacters sent: , Characters received: ")
 
 		var topBars = svg.append("g")
 			.attr("class", "top-bars")
@@ -479,10 +514,28 @@
 			.attr("class", "bottom-bars")
 
 		var messageBox = d3.select("body")
-						.append("textarea")
-						.attr("readonly",true)
-						.attr("id","messageBox")
-						.style("width", w+"px")
+			.append("textarea")
+			.attr("readonly", true)
+			.attr("id", "messageBox")
+			.style("width", w + "px")
+
+		function setClockScales(hourData) {
+			var maxVal = 0
+
+			for (el in hourData) {
+				if (hourData[el][0] + hourData[el][1] > maxVal) {
+					maxVal = hourData[el][0] + hourData[el][1]
+				}
+			}
+
+			xClock = d3.scaleBand()
+				.range([0, 2 * Math.PI])
+				.domain(d3.range(24))
+
+			yClock = d3.scaleLinear()
+				.range([0, h / 2 - 20])
+				.domain([0, maxVal])
+		}
 
 		function setScales(s, r) {
 
@@ -676,6 +729,106 @@
 			// 	.attr("fill", "black");
 		}
 
+		function drawClock(data) {
+			clock.append("circle")
+				.style("fill", "#999999")
+				.attr("r", h / 2 - 10)
+				.attr("cx", 0)
+				.attr("cy", 0)
+
+			var colours = ["#0000ff", "#00ff00"]
+
+			clock.append("g")
+				.selectAll("path")
+				.data(data)
+				.enter()
+				.append("path")
+				.attr("fill", function (d) { return colours[d[2]] })
+				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
+					.innerRadius(0)
+					.outerRadius(function (d) { return yClock(d[0]); })
+					.startAngle(function (d, i) { return xClock(i); })
+					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
+					.padAngle(0.01)
+					.padRadius(0))
+				.on("mouseover", function (d, i) {
+
+					var xPosition = d3.event.pageX - document.getElementById('svg-graph').getBoundingClientRect().x + 10
+					var yPosition = d3.event.pageY - document.getElementById('svg-graph').getBoundingClientRect().y + 150
+
+					//Update the tooltip position and value
+					d3.select("#tooltip")
+						.style("left", xPosition + "px")
+						.style("top", yPosition + "px")
+						.select("#value")
+						.text(calcTooltipText(d, i))
+
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+				})
+				.on("mouseout", function () {
+
+					//Hide the tooltip
+					d3.select("#tooltip").classed("hidden", true);
+
+				})
+
+
+			// Add bars
+			clock.append("g")
+				.selectAll("path")
+				.data(data)
+				.enter()
+				.append("path")
+				.attr("fill", function (d) { return colours[1 - d[2]] })
+				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
+					.innerRadius(function (d) { return yClock(d[0]) })
+					.outerRadius(function (d) { return yClock(d[0]) + yClock(d[1]); })
+					.startAngle(function (d, i) { return xClock(i); })
+					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
+					.padAngle(0.01)
+					.padRadius(0))
+				.on("mouseover", function (d, i) {
+
+					var xPosition = d3.event.pageX - document.getElementById('svg-graph').getBoundingClientRect().x + 10
+					var yPosition = d3.event.pageY - document.getElementById('svg-graph').getBoundingClientRect().y + 150
+
+					//Update the tooltip position and value
+					d3.select("#tooltip")
+						.style("left", xPosition + "px")
+						.style("top", yPosition + "px")
+						.select("#value")
+						.text(calcTooltipText(d, i))
+
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+				})
+				.on("mouseout", function () {
+
+					//Hide the tooltip
+					d3.select("#tooltip").classed("hidden", true);
+
+				})
+
+		}
+
+		function redraw(json) {
+			clearGraph()
+			var output = handleJson(json, period)
+			if (timeline) {
+				setScales(output[0], output[1])
+
+				drawTopBars(output[0])
+				drawBottomBars(output[1])
+			} else {
+				setClockScales(output[2])
+
+				drawClock(output[2])
+			}
+		}
+
 		function handleJson(rawJson, period) {
 
 			people = [userName]
@@ -693,11 +846,11 @@
 			var numCharSent = 0
 			var numCharRcv = 0
 
-			
+
 			// firstTimestamp = Math.floor(rawJson.messages[rawJson.messages.length - 1].timestamp_ms / (day_in_ms)) * day_in_ms
 			// lastTimestamp = Math.floor(rawJson.messages[0].timestamp_ms / (day_in_ms) + 1) * day_in_ms
 
-			
+
 
 			var actualFirstTimestamp
 			var actualLastTimestamp
@@ -720,20 +873,25 @@
 			//First message: 30 Jan 2020 10:22:32 AM
 			// Last Message: 20 Nov 2020 1:08:03 AM
 
+			var hoursMsg = new Array(24)
+			for (var i = 0; i < 24; i++) {
+				hoursMsg[i] = [0, 0]
+			}
 
 			for (var i = rawJson.messages.length - 1; i > -1; i--) {
-				
+
 				var thisMess = rawJson.messages[i]
 
 				var dayNum = Math.floor((thisMess.timestamp_ms - firstTimestamp) / period)
 
+				var hourNum = new Date(thisMess.timestamp_ms).getHours()
 
 				if (dayNum >= 0 && dayNum <= lastDayNum && thisMess.type === "Generic") {
-					
+
 					charCounter = (thisMess.content ? thisMess.content.length : 0)
 
-					if(!firstSet){
-				
+					if (!firstSet) {
+
 						actualFirstTimestamp = thisMess.timestamp_ms
 						firstSet = true
 					}
@@ -760,10 +918,12 @@
 							sentMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
 						}
 
+						hoursMsg[hourNum][0] += thisMessLen
+
 
 					} else {
 						numRcv++
-						numCharRcv+=charCounter
+						numCharRcv += charCounter
 						if (rcvMessCount[dayNum]) {
 							rcvMessCount[dayNum] = rcvMessCount[dayNum] + thisMessLen
 							rcvMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
@@ -771,15 +931,36 @@
 							rcvMessCount[dayNum] = thisMessLen
 							rcvMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
 						}
+
+						hoursMsg[hourNum][1] += thisMessLen
 					}
 				}
 
 			}
 
-			d3.select("#summaryText").text("First message: " + fullTime(actualFirstTimestamp)+
-			", Last message: "+ fullTime(actualLastTimestamp) + "\nMessages sent: " + numSent+
-			", Messages received: " + numRcv +"\nCharacters sent: " + numCharSent+
-			", Characters received: " + numCharRcv)
+			for (var i = 0; i < 24; i++) {
+				if (hoursMsg[i][0] > hoursMsg[i][1]) {
+					hoursMsg[i].push(0)
+				} else {
+					var temp = hoursMsg[i][1]
+					hoursMsg[i][1] = hoursMsg[i][0]
+					hoursMsg[i][0] = temp
+					hoursMsg[i].push(1)
+				}
+			}
+
+			var partString = ""
+
+			for (p in people) {
+				partString += people[p] + " and "
+			}
+
+			partString = partString.substring(0, partString.length - 5)
+
+			d3.select("#summaryText").text("Message between " + partString + "\nFirst message: " + fullTime(actualFirstTimestamp) +
+				", Last message: " + fullTime(actualLastTimestamp) + "\nMessages sent: " + numSent +
+				", Messages received: " + numRcv + "\nCharacters sent: " + numCharSent +
+				", Characters received: " + numCharRcv)
 			// console.log("First message: " + fullTime(actualFirstTimestamp))
 			// console.log("Last Message: " + fullTime(actualLastTimestamp))
 
@@ -797,7 +978,7 @@
 				rcvMessArray.push({ key: parseInt(i), value: rcvMessCount[i], messages: rcvMess[i] })
 			}
 
-			return [sentMessArray, rcvMessArray]
+			return [sentMessArray, rcvMessArray, hoursMsg]
 
 
 		}
