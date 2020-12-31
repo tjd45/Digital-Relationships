@@ -8,16 +8,31 @@
 	<style type="text/css">
 		#svg-graph {
 			background-color: black;
+			margin-right: 8px;
+			float: left;
+			
+		}
+
+		#svg_messages_div {
 			display: block;
 			margin-bottom: 20px;
+		}
+
+		#messageBox {
+			box-sizing: border-box;
 		}
 
 		rect:hover {
 			fill: orange;
 		}
 
-		path:hover {
-			fill: orange;
+		.fillerSegment {
+			opacity: 0.0;
+		}
+
+		.fillerSegment:hover {
+			fill: white;
+			opacity: 0.3;
 		}
 
 		#tooltip {
@@ -135,6 +150,7 @@
 			<input class="floated" type="date" id="endDate" name="endDate">
 
 			<button id="updateDates" class="floated">Update Dates</button>
+			<button id="resetDates" class="floated">Reset Dates</button>
 
 			<br />
 			<p id="summaryText"></p>
@@ -200,7 +216,22 @@
 
 				firstTimestamp = startTS
 				lastTimestamp = endTS
-				redraw(currentJson)
+
+				if (currentJson) {
+					redraw(currentJson)
+				}
+
+
+			})
+
+		d3.select("#resetDates")
+			.on("click", function () {
+
+				if(currentJson){
+					updateDateRange(currentJson)
+					redraw(currentJson)
+				}
+				
 
 
 
@@ -287,6 +318,7 @@
 
 		function printMessages(key) {
 			document.getElementById('messageBox').value = ""
+			document.getElementById('messageBox').scrollTop = 0
 			var sLength = 0
 			var rLength = 0
 
@@ -491,11 +523,14 @@
 			fr.readAsText(files.item(0));
 		};
 
-		var w = 1500;
-		var h = 1000;
+		console.log(window.innerWidth)
+		var w = window.innerWidth-500;
+		var h = window.innerHeight-240;
 		var padding = 20;
 
 		var svg = d3.select("body")
+			.append("div")
+			.attr("id","svg_messages_div")
 			.append("svg")
 			.attr("width", w)
 			.attr("height", h)
@@ -513,11 +548,12 @@
 		var bottomBars = svg.append("g")
 			.attr("class", "bottom-bars")
 
-		var messageBox = d3.select("body")
+		var messageBox = d3.select("#svg_messages_div")
 			.append("textarea")
 			.attr("readonly", true)
 			.attr("id", "messageBox")
-			.style("width", w + "px")
+			.style("width", 450 + "px")
+			.style("height",h+"px")
 
 		function setClockScales(hourData) {
 			var maxVal = 0
@@ -751,31 +787,9 @@
 					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
 					.padAngle(0.01)
 					.padRadius(0))
-				.on("mouseover", function (d, i) {
-
-					var xPosition = d3.event.pageX - document.getElementById('svg-graph').getBoundingClientRect().x + 10
-					var yPosition = d3.event.pageY - document.getElementById('svg-graph').getBoundingClientRect().y + 150
-
-					//Update the tooltip position and value
-					d3.select("#tooltip")
-						.style("left", xPosition + "px")
-						.style("top", yPosition + "px")
-						.select("#value")
-						.text(calcTooltipText(d, i))
-
-					//Show the tooltip
-					d3.select("#tooltip").classed("hidden", false);
-
-				})
-				.on("mouseout", function () {
-
-					//Hide the tooltip
-					d3.select("#tooltip").classed("hidden", true);
-
-				})
 
 
-			// Add bars
+			// Add second set
 			clock.append("g")
 				.selectAll("path")
 				.data(data)
@@ -785,6 +799,38 @@
 				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
 					.innerRadius(function (d) { return yClock(d[0]) })
 					.outerRadius(function (d) { return yClock(d[0]) + yClock(d[1]); })
+					.startAngle(function (d, i) { return xClock(i); })
+					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
+					.padAngle(0.01)
+					.padRadius(0))
+
+			// Add halfway markers
+			clock.append("g")
+				.selectAll("path")
+				.data(data)
+				.enter()
+				.append("path")
+				.attr("fill", function (d) { return "black" })
+				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
+					.innerRadius(function (d) { return (yClock(d[0] + d[1])) / 2 - 1 })
+					.outerRadius(function (d) { return (yClock(d[0] + d[1])) / 2 + 1 })
+					.startAngle(function (d, i) { return xClock(i) + (Math.PI / 96); })
+					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth() - (Math.PI / 96); })
+					.padAngle(0.01)
+					.padRadius(0))
+
+
+			// Add dummy segments for hover/tooltip
+			clock.append("g")
+				.selectAll("path")
+				.data(data)
+				.enter()
+				.append("path")
+				.attr("fill", "#ffffff")
+				.attr("class", "fillerSegment")
+				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
+					.innerRadius(0)
+					.outerRadius(h / 2 - 10)
 					.startAngle(function (d, i) { return xClock(i); })
 					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
 					.padAngle(0.01)
