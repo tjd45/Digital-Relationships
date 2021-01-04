@@ -10,7 +10,7 @@
 			background-color: black;
 			margin-right: 8px;
 			float: left;
-			
+
 		}
 
 		#svg_messages_div {
@@ -20,10 +20,20 @@
 
 		#messageBox {
 			box-sizing: border-box;
+			resize: none;
 		}
 
-		rect:hover {
+		/* rect:hover {
 			fill: orange;
+		} */
+
+		.fillerRect {
+			opacity: 0.0;
+		}
+
+		.fillerRect:hover {
+			fill: white;
+			opacity: 0.3;
 		}
 
 		.fillerSegment {
@@ -74,18 +84,30 @@
 
 		.controls {
 			display: block;
-			margin-bottom: 50px;
+			height: 210px;
+
 		}
 
 		.controlsLeft {
+			height: 100%;
+			width: 330px;
 			float: left;
-			margin-right: 20px;
+
+
+		}
+
+		.controlsMiddle {
+			height: 100%;
+			width: 700px;
+			float: left;
+
 
 		}
 
 		.controlsRight {
-
-			margin-bottom: 0px;
+			height: 100%;
+			width: 100%;
+			float: none;
 
 		}
 
@@ -99,6 +121,13 @@
 
 		}
 
+		.clockText {
+			color: white
+		}
+
+		.colourSelector {
+			margin-right: 10px;
+		}
 
 
 		/* #messageBox{
@@ -116,6 +145,7 @@
 		<div class="controlsLeft">
 			<input type="file" id="selectFiles" value="Import" /><br />
 			<button id="import">Import</button>
+
 			<button id="clear">Clear</button>
 
 			<p>
@@ -138,7 +168,7 @@
 		</textarea> -->
 
 		</div>
-		<div class="controlsRight">
+		<div class="controlsMiddle">
 			<p>
 				<input type="radio" name="messagesOrCharacters" value="Messages" checked="true"> Individual Messages
 				<input type="radio" name="messagesOrCharacters" value="Characters"> Total Characters
@@ -156,6 +186,15 @@
 			<p id="summaryText"></p>
 
 		</div>
+		<div class="controlsRight">
+			<input class="colourSelector" type="color" id="sendColour" value="#0000ff"><label id="sendColourLabel"
+				for="sendColour"></label>
+			<br />
+			<input class="colourSelector" type="color" id="rcvColour" value="#00ff00"><label id="rcvColourLabel"
+				for="rcvColour"></label>
+		</div>
+
+
 	</div>
 
 
@@ -193,6 +232,13 @@
 		var timeline = true
 
 		var userName = "Tom Davidson"
+		var sendColour = document.getElementById('sendColour').value
+		var rcvColour = document.getElementById('rcvColour').value
+
+		var colourMap = { "Tom Davidson": "#1fc3ff" }
+		var defaultReceiveColour = "#00ff00"
+
+		var offsets = {}
 
 		document.getElementById('update').onclick = function () {
 			var newUser = d3.select("#uname").property("value")
@@ -201,9 +247,25 @@
 				userName = newUser
 			}
 
-			console.log(userName)
+			if (currentJson) {
+				redraw(currentJson)
+			}
 
 
+		}
+
+		document.getElementById('sendColour').onchange = function () {
+			sendColour = this.value
+			if (currentJson)
+				colourMap[userName] = sendColour
+			redraw(currentJson)
+		}
+
+		document.getElementById('rcvColour').onchange = function () {
+			rcvColour = this.value
+			if (currentJson)
+				colourMap[currentJson.title] = rcvColour
+			redraw(currentJson)
 		}
 
 
@@ -227,11 +289,11 @@
 		d3.select("#resetDates")
 			.on("click", function () {
 
-				if(currentJson){
+				if (currentJson) {
 					updateDateRange(currentJson)
 					redraw(currentJson)
 				}
-				
+
 
 
 
@@ -382,9 +444,9 @@
 		var currentJson
 		function sameParticipants(j1, j2) {
 			if (j1) {
+				return j1.title == j2.title
 
-
-				return arraysEqual(j1.participants, j2.participants)
+				//return arraysEqual(j1.participants, j2.participants)
 
 			} else {
 				return false
@@ -523,14 +585,16 @@
 			fr.readAsText(files.item(0));
 		};
 
-		console.log(window.innerWidth)
-		var w = window.innerWidth-500;
-		var h = window.innerHeight-240;
+
+
+
+		var w = window.innerWidth - 500;
+		var h = window.innerHeight - 240;
 		var padding = 20;
 
 		var svg = d3.select("body")
 			.append("div")
-			.attr("id","svg_messages_div")
+			.attr("id", "svg_messages_div")
 			.append("svg")
 			.attr("width", w)
 			.attr("height", h)
@@ -553,7 +617,7 @@
 			.attr("readonly", true)
 			.attr("id", "messageBox")
 			.style("width", 450 + "px")
-			.style("height",h+"px")
+			.style("height", h + "px")
 
 		function setClockScales(hourData) {
 			var maxVal = 0
@@ -569,7 +633,7 @@
 				.domain(d3.range(24))
 
 			yClock = d3.scaleLinear()
-				.range([0, h / 2 - 20])
+				.range([0, Math.min(h, w) / 2 - 120])
 				.domain([0, maxVal])
 		}
 
@@ -612,10 +676,20 @@
 				.tickValues(ticks)
 				.tickFormat(d => (justDate(firstTimestamp + (d * period))));
 
+			var falseXAxis = d3.axisTop()
+				.scale(xScale)
+				.tickValues(ticks)
+				.tickFormat(d => "");
+
 			svg.append("g")
 				.attr("class", "axis")
-				.attr("transform", "translate(0," + (10) + ")")
+				.attr("transform", "translate(0," + (h / 2 - 12) + ")")
 				.call(xAxis)
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (h / 2 + 12) + ")")
+				.call(falseXAxis)
 
 			var maxSValue = d3.max(s, function (d) { return d.value; })
 			var maxRValue = d3.max(r, function (d) { return d.value; })
@@ -630,8 +704,8 @@
 				.range([0, h / 2 - padding]);
 		}
 
-		function drawTopBars(dataToDraw) {
-
+		function drawTopBars(dataToDraw, thisConv) {
+			var name = thisConv
 
 			//draw the bars
 			topBars.selectAll("rect")
@@ -642,15 +716,32 @@
 					return xScale(d.key);
 				})
 				.attr("y", function (d) {
-					return h / 2 - yScale(d.value);
+					return h / 2 - 12 - yScale(d.value) //- offsets[d.key][name].Offset;
 				})
 				.attr("width", xScale.bandwidth())
 				.attr("height", function (d) {
 					return yScale(d.value);
 				})
-				.attr("fill", function (d) {
-					return "rgb(0, 0, 255)";
+				.attr("fill", sendColour)
+				;
+
+			topBars.append("g")
+				.selectAll("rect")
+				.data(dataToDraw, key)
+				.enter()
+				.append("rect")
+				.attr("class", "fillerRect")
+				.attr("x", function (d) {
+					return xScale(d.key);
 				})
+				.attr("y", function (d) {
+					return h / 2 - 12 - yScale(d.value) //- offsets[d.key][name].Offset;
+				})
+				.attr("width", xScale.bandwidth())
+				.attr("height", function (d) {
+					return yScale(d.value);
+				})
+				.attr("fill", sendColour)
 				.on("mouseover", function (d) {
 
 					//Get this bar's x/y values, then augment for the tooltip
@@ -678,24 +769,6 @@
 					printMessages(d.key)
 				});
 
-			//add the labels
-			// topBars.selectAll("text")
-			// 	.data(dataToDraw, key)
-			// 	.enter()
-			// 	.append("text")
-			// 	.text(function (d) {
-			// 		return d.value;
-			// 	})
-			// 	.attr("text-anchor", "middle")
-			// 	.attr("x", function (d) {
-			// 		return xScale(d.key) + xScale.bandwidth() / 2;
-			// 	})
-			// 	.attr("y", function (d) {
-			// 		return h / 2 - yScale(d.value) + 14;
-			// 	})
-			// 	.attr("font-family", "sans-serif")
-			// 	.attr("font-size", "11px")
-			// 	.attr("fill", "white");
 
 		}
 
@@ -709,16 +782,34 @@
 					return xScale(d.key);
 				})
 				.attr("y", function (d) {
-					return h / 2;
+					return h / 2 + 12;
 				})
 				.attr("width", xScale.bandwidth())
 				.attr("height", function (d) {
 
 					return yScale(d.value);
 				})
-				.attr("fill", function (d) {
-					return "rgb(0,255,0)";
+				.attr("fill", rcvColour)
+				;
+
+			bottomBars.append("g")
+				.selectAll("rect")
+				.data(dataToDraw, key)
+				.enter()
+				.append("rect")
+				.attr("class", "fillerRect")
+				.attr("x", function (d, i) {
+					return xScale(d.key);
 				})
+				.attr("y", function (d) {
+					return h / 2 + 12;
+				})
+				.attr("width", xScale.bandwidth())
+				.attr("height", function (d) {
+
+					return yScale(d.value);
+				})
+				.attr("fill", rcvColour)
 				.on("mouseover", function (d) {
 
 					//Get this bar's x/y values, then augment for the tooltip
@@ -745,34 +836,47 @@
 					printMessages(d.key)
 				});;
 
-			//Create bottom labels
-			// bottomBars.selectAll("text")
-			// 	.data(dataToDraw, key)
-			// 	.enter()
-			// 	.append("text")
-			// 	.text(function (d) {
-			// 		return d.value;
-			// 	})
-			// 	.attr("text-anchor", "middle")
-			// 	.attr("x", function (d, i) {
-			// 		return xScale(d.key) + xScale.bandwidth() / 2;
-			// 	})
-			// 	.attr("y", function (d) {
-			// 		return h / 2 + yScale(d.value) - 14;
-			// 	})
-			// 	.attr("font-family", "sans-serif")
-			// 	.attr("font-size", "11px")
-			// 	.attr("fill", "black");
 		}
 
 		function drawClock(data) {
+			var clockRad = Math.min(h, w) / 2 - 100
 			clock.append("circle")
 				.style("fill", "#999999")
-				.attr("r", h / 2 - 10)
+				.attr("r", clockRad)
 				.attr("cx", 0)
 				.attr("cy", 0)
 
-			var colours = ["#0000ff", "#00ff00"]
+			clock.append("text")
+				.attr("class", "clockText")
+				.style('fill', 'white')
+				.attr("x", -18)
+				.attr("y", - clockRad - 50)
+				.text("00:00")
+
+			clock.append("text")
+				.attr("class", "clockText")
+				.style('fill', 'white')
+				.attr("x", -18)
+				.attr("y", clockRad + 50)
+				.text("12:00")
+
+			clock.append("text")
+				.attr("class", "clockText")
+				.style('fill', 'white')
+				.attr("x", clockRad + 50)
+				.attr("y", 9)
+				.text("06:00")
+
+			clock.append("text")
+				.attr("class", "clockText")
+				.style('fill', 'white')
+				.attr("x", - clockRad - 86)
+				.attr("y", 9)
+				.text("18:00")
+
+			var colours = [sendColour, rcvColour]
+
+
 
 			clock.append("g")
 				.selectAll("path")
@@ -830,7 +934,7 @@
 				.attr("class", "fillerSegment")
 				.attr("d", d3.arc()     // imagine your doing a part of a donut plot
 					.innerRadius(0)
-					.outerRadius(h / 2 - 10)
+					.outerRadius(clockRad)
 					.startAngle(function (d, i) { return xClock(i); })
 					.endAngle(function (d, i) { return xClock(i) + xClock.bandwidth(); })
 					.padAngle(0.01)
@@ -860,19 +964,78 @@
 
 		}
 
+		function handleColours(json){
+			document.getElementById('sendColourLabel').innerHTML = userName;
+			document.getElementById('rcvColourLabel').innerHTML = json.title;
+
+			if(colourMap[userName]){
+				document.getElementById('sendColour').value = colourMap[userName];
+				sendColour = colourMap[userName];
+			}else{
+				colourMap[userName] = document.getElementById('sendColour').value;
+			}
+
+			if(colourMap[json.title]){
+				document.getElementById('rcvColour').value = colourMap[json.title];
+				rcvColour = colourMap[json.title];
+			}else{
+				document.getElementById('rcvColour').value = defaultReceiveColour;
+				colourMap[json.title] = document.getElementById('rcvColour').value;
+				rcvColour = colourMap[json.title];
+			}
+
+		}
+
 		function redraw(json) {
 			clearGraph()
+
+			handleColours(json)
+
 			var output = handleJson(json, period)
+
+			//handleOffsets(output[0], output[3])
+
 			if (timeline) {
 				setScales(output[0], output[1])
 
-				drawTopBars(output[0])
+				drawTopBars(output[0], output[3])
 				drawBottomBars(output[1])
 			} else {
 				setClockScales(output[2])
 
 				drawClock(output[2])
 			}
+		}
+
+		function handleOffsets(j, name) {
+			//BACKBURNER for timebeing
+
+			for (x in j) {
+				var jKey = j[x].key
+				var jValue = j[x].value
+				if (offsets.hasOwnProperty(jKey)) {
+					var fillerOffset = 0
+
+					for (var person in offsets[jKey]) {
+						if (offsets[jKey][person].Value < jValue) {
+							offsets[jKey][person].Offset += jValue
+						} else {
+							fillerOffset += offsets[jKey][person].Value
+						}
+					}
+					offsets[jKey][name] = { "Value": jValue, "Offset": fillerOffset }
+					console.log("Recalculating offset")
+					console.log(offsets[jKey])
+				} else {
+					offsets[jKey] = {
+						[name]: { "Value": jValue, "Offset": 0 }
+
+					}
+				}
+			}
+
+			console.log(offsets)
+
 		}
 
 		function handleJson(rawJson, period) {
@@ -885,7 +1048,7 @@
 				}
 			}
 
-
+			var thisConvID = rawJson.title
 
 			var numSent = 0
 			var numRcv = 0
@@ -1016,6 +1179,8 @@
 			var sentMessArray = []
 			var rcvMessArray = []
 
+
+
 			for (var i in sentMessCount) {
 				sentMessArray.push({ key: parseInt(i), value: sentMessCount[i], messages: sentMess[i] })
 			}
@@ -1024,7 +1189,9 @@
 				rcvMessArray.push({ key: parseInt(i), value: rcvMessCount[i], messages: rcvMess[i] })
 			}
 
-			return [sentMessArray, rcvMessArray, hoursMsg]
+		
+
+			return [sentMessArray, rcvMessArray, hoursMsg, thisConvID]
 
 
 		}
