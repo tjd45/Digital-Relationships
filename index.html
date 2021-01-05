@@ -5,6 +5,7 @@
 	<meta charset="utf-8">
 	<title>Digital Relationships: Thomas Davidson 2020</title>
 	<script type="text/javascript" src="d3.js"></script>
+	<script type="text/javascript" src="jquery-3.5.1.js"></script>
 	<style type="text/css">
 		#svg-graph {
 			background-color: black;
@@ -110,7 +111,7 @@
 
 		.controlsRight {
 			height: 100%;
-	
+
 			float: left;
 
 		}
@@ -151,7 +152,7 @@
 
 		}
 
-	
+
 
 		html,
 		body {
@@ -162,9 +163,9 @@
 
 		}
 
-		
 
-	
+
+
 
 		#messageBox::-webkit-scrollbar-thumb {
 			background: #999999;
@@ -236,7 +237,32 @@
 			background: transparent;
 		}
 
-		
+
+		#modal {
+			position: fixed;
+			font-family: Arial, Helvetica, sans-serif;
+			top: 0;
+			left: 0;
+			background: rgba(0, 0, 0, 0.8);
+			z-index: 99999;
+			height: 100%;
+			width: 100%;
+		}
+
+		.modalconent {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: #fff;
+			color:black;
+			width: 80%;
+			padding: 20px;
+		}
+
+		#modalButton {
+			float: right;
+		}
 	</style>
 </head>
 
@@ -246,7 +272,7 @@
 	</div>
 
 	<div class="header">
-		<h1>Digital Relationships</h1>
+		<h1>Digital Relationships by Thomas Davidson</h1>
 
 	</div>
 
@@ -306,13 +332,51 @@
 
 	</div>
 
+	<div id="modal">
+		<div class="modalconent">
+			<h1></h1>
+
+			<p>Hello, and welcome to Digital Relationships by Thomas Davidson. This is a project developed for the  
+				2021 Science Gallery Youth Symposium.
+				<br/>
+				<br/>
+				Data Privacy: <b> None </b> of the data from your message files is at <b>any</b> point uploaded or
+				stored anywhere other than your computer. All processing takes place on your local machine.
+				<br/>
+				<br/>
+				To enter the site please enter your name <b>exactly</b> as it appears in your Facebook messages
+				and then click the "Enter Site" button <input type="text" id="modalUname" name="modalUname"> 
 
 
+			</p>
+			<button id="modalButton">Enter Site</button>
+		</div>
+	</div>
 
 
 
 
 	<script type="text/javascript">
+		var userName = "A girl has no name"
+
+		document.getElementById("modalUname").addEventListener("keyup", function(event){
+			if(event.keyCode === 13){
+				event.preventDefault();
+				document.getElementById("modalButton").click();
+			}
+		})
+
+		window.onload = function () {
+			document.getElementById('modalButton').onclick = function () {
+				var newUname = document.getElementById('modalUname').value
+				if(newUname.length>0){
+					userName = newUname
+				}
+				document.getElementById('uname').value = userName
+				document.getElementById('modal').style.display = "none"
+			};
+		};
+
 		var parseTime = d3.timeParse("%d/%m/%Y")
 
 		var fullTime = d3.timeFormat("%e %b %Y %X")
@@ -340,7 +404,7 @@
 		var indivMessages = true
 		var timeline = true
 
-		var userName = "Tom Davidson"
+		
 		var sendColour = document.getElementById('sendColour').value
 		var rcvColour = document.getElementById('rcvColour').value
 
@@ -348,6 +412,8 @@
 		var defaultReceiveColour = "#00ff00"
 
 		var offsets = {}
+
+		
 
 		document.getElementById('update').onclick = function () {
 			var newUser = d3.select("#uname").property("value")
@@ -696,11 +762,11 @@
 
 		console.log(window.innerHeight)
 
-		var otherElHeights = d3.select(".controls").node().getBoundingClientRect().height + 
-							d3.select(".header").node().getBoundingClientRect().height + 40;
+		var otherElHeights = d3.select(".controls").node().getBoundingClientRect().height +
+			d3.select(".header").node().getBoundingClientRect().height + 40;
 
 		var otherElWidths = 450 + 20 + 8 + 11;
-		
+
 		var w = window.innerWidth - otherElWidths;
 		var h = window.innerHeight - otherElHeights;
 		var padding = 20;
