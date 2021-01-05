@@ -132,6 +132,7 @@
 
 		.colourSelector {
 			margin-right: 10px;
+			margin-bottom: 5px;
 		}
 
 		.header {
@@ -167,31 +168,31 @@
 
 
 
-		#messageBox::-webkit-scrollbar-thumb {
+		::-webkit-scrollbar-thumb {
 			background: #999999;
 			border: 1px solid #333333;
 			border-radius: 50px;
 		}
 
-		#messageBox::-webkit-scrollbar-thumb:hover {
+		::-webkit-scrollbar-thumb:hover {
 			background: #777777;
 		}
 
-		#messageBox::-webkit-scrollbar-thumb:active {
+		::-webkit-scrollbar-thumb:active {
 			background: #777777;
 		}
 
-		#messageBox::-webkit-scrollbar-track {
+		::-webkit-scrollbar-track {
 			background: #333333;
 			border: 0px none #444444;
 			border-radius: 53px;
 		}
 
-		#messageBox::-webkit-scrollbar-track:hover {
+		::-webkit-scrollbar-track:hover {
 			background: #333333;
 		}
 
-		#messageBox::-webkit-scrollbar-track:active {
+		::-webkit-scrollbar-track:active {
 			background: #333333;
 		}
 
@@ -205,41 +206,13 @@
 			height: 0px;
 		}
 
-		::-webkit-scrollbar-thumb {
-			background: #333333;
-			border: 1px solid #777777;
-			border-radius: 50px;
-		}
-
-		::-webkit-scrollbar-thumb:hover {
-			background: #AAAAAA;
-		}
-
-		::-webkit-scrollbar-thumb:active {
-			background: #999999;
-		}
-
-		::-webkit-scrollbar-track {
-			background: #BBBBBB;
-			border: 0px none #ffffff;
-			border-radius: 53px;
-		}
-
-		::-webkit-scrollbar-track:hover {
-			background: #444444;
-		}
-
-		::-webkit-scrollbar-track:active {
-			background: #444444;
-		}
-
 		::-webkit-scrollbar-corner {
 			background: transparent;
 		}
 
 
 		#modal {
-			display: none;
+			/* display: none; */
 			position: fixed;
 			font-family: Arial, Helvetica, sans-serif;
 			top: 0;
@@ -263,6 +236,25 @@
 
 		#modalButton {
 			float: right;
+		}
+
+		nav ul {
+			background-color: #AAAAAA;
+			height: 100px;
+			width: 220px;
+		}
+
+		nav ul {
+			overflow: hidden;
+			list-style-type: none;
+			padding: 0px;
+			overflow-y: auto;
+		}
+
+		li {
+			margin-top:5px;
+			margin-left:5px;
+			margin-right:5px;
 		}
 	</style>
 </head>
@@ -329,6 +321,17 @@
 			<br />
 			<input class="colourSelector" type="color" id="rcvColour" value="#00ff00"><label id="rcvColourLabel"
 				for="rcvColour"></label>
+			<br />
+			<button id="saveSelection">Save Selection</button>
+			<button id="clearSelections">Clear Selections</button>
+
+			<nav>
+				<ul id='previousSelections'>
+					
+
+				</ul>
+			</nav>
+
 		</div>
 
 
@@ -359,7 +362,7 @@
 
 
 	<script type="text/javascript">
-		var userName = "Tom Davidson"
+		var userName = "A girl has no name"
 		var lockedDates = false
 
 		document.getElementById("modalUname").addEventListener("keyup", function (event) {
@@ -415,6 +418,44 @@
 		var defaultReceiveColour = "#00ff00"
 
 		var offsets = {}
+
+		function updateSavedSelections(data){
+			var savedSelections = d3.select("previousSelections")
+									.selectAll("li")
+									.data(data);
+
+			savedSelections
+				.enter()
+				.append("li")
+		}
+
+		document.getElementById('saveSelection').onclick = function () {
+			if (currentJson) {
+
+				var thisConv = currentJson.title
+				
+				if(!oldJson[thisConv]){
+					d3.select("#previousSelections").append("li").append("button").text(currentJson.title)
+						.on('click',function(d){
+							console.log(thisConv)
+							currentJson = oldJson[thisConv]
+				
+							updateDateRange(currentJson)
+							redraw(currentJson)
+
+					})
+				}
+
+				oldJson[currentJson.title] = currentJson
+				
+			}
+		}
+
+		document.getElementById('clearSelections').onclick = function () {
+			oldJson = {}
+			d3.select("#previousSelections").selectAll("li").remove()
+
+		}
 
 
 
@@ -643,6 +684,7 @@
 		}
 
 		var currentJson
+		var oldJson = {}
 		function sameParticipants(j1, j2) {
 			if (j1) {
 				return j1.title == j2.title
@@ -778,8 +820,8 @@
 				// fandl = firstAndLastTimestamps(result)
 				// firstTimestamp = fandl[0]
 				// lastTimestamp = fandl[1]
-				if(!lockedDates && document.getElementById('lockDates').disabled){
-					document.getElementById('lockDates').disabled=false
+				if (!lockedDates && document.getElementById('lockDates').disabled) {
+					document.getElementById('lockDates').disabled = false
 				}
 
 				redraw(result)
@@ -847,7 +889,7 @@
 		function setScales(s, r) {
 
 
-			
+
 
 			var lTSKey = Math.floor((lastTimestamp - firstTimestamp) / period) + 1;
 
@@ -866,14 +908,14 @@
 
 
 			var ticks = []
-			for (i = Math.floor(gap/2); i < lTSKey; i += gap) {
+			for (i = Math.floor(gap / 2); i < lTSKey; i += gap) {
 				ticks.push(i)
 			}
 
 			var xAxis = d3.axisBottom()
 				.scale(xScale)
 				.tickValues(ticks)
-				.tickFormat(d => (justDate(firstTimestamp +(period/2) + (d * period))))
+				.tickFormat(d => (justDate(firstTimestamp + (period / 2) + (d * period))))
 				.tickSizeOuter(0);
 
 			var falseXAxis = d3.axisTop()
