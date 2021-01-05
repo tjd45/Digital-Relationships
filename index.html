@@ -103,7 +103,7 @@
 
 		.controlsMiddle {
 			height: 100%;
-			width: 700px;
+			width: 800px;
 			float: left;
 
 
@@ -239,6 +239,7 @@
 
 
 		#modal {
+			display: none;
 			position: fixed;
 			font-family: Arial, Helvetica, sans-serif;
 			top: 0;
@@ -255,7 +256,7 @@
 			left: 50%;
 			transform: translate(-50%, -50%);
 			background: #fff;
-			color:black;
+			color: black;
 			width: 80%;
 			padding: 20px;
 		}
@@ -316,6 +317,7 @@
 
 			<button id="updateDates" class="floated">Update Dates</button>
 			<button id="resetDates" class="floated">Reset Dates</button>
+			<button id="lockDates" class="floated" disabled>Lock Dates</button>
 
 			<br />
 			<p id="summaryText"></p>
@@ -336,16 +338,16 @@
 		<div class="modalconent">
 			<h1></h1>
 
-			<p>Hello, and welcome to Digital Relationships by Thomas Davidson. This is a project developed for the  
+			<p>Hello, and welcome to Digital Relationships by Thomas Davidson. This is a project developed for the
 				2021 Science Gallery Youth Symposium.
-				<br/>
-				<br/>
+				<br />
+				<br />
 				Data Privacy: <b> None </b> of the data from your message files is at <b>any</b> point uploaded or
 				stored anywhere other than your computer. All processing takes place on your local machine.
-				<br/>
-				<br/>
+				<br />
+				<br />
 				To enter the site please enter your name <b>exactly</b> as it appears in your Facebook messages
-				and then click the "Enter Site" button <input type="text" id="modalUname" name="modalUname"> 
+				and then click the "Enter Site" button <input type="text" id="modalUname" name="modalUname">
 
 
 			</p>
@@ -357,10 +359,11 @@
 
 
 	<script type="text/javascript">
-		var userName = "A girl has no name"
+		var userName = "Tom Davidson"
+		var lockedDates = false
 
-		document.getElementById("modalUname").addEventListener("keyup", function(event){
-			if(event.keyCode === 13){
+		document.getElementById("modalUname").addEventListener("keyup", function (event) {
+			if (event.keyCode === 13) {
 				event.preventDefault();
 				document.getElementById("modalButton").click();
 			}
@@ -369,7 +372,7 @@
 		window.onload = function () {
 			document.getElementById('modalButton').onclick = function () {
 				var newUname = document.getElementById('modalUname').value
-				if(newUname.length>0){
+				if (newUname.length > 0) {
 					userName = newUname
 				}
 				document.getElementById('uname').value = userName
@@ -404,7 +407,7 @@
 		var indivMessages = true
 		var timeline = true
 
-		
+
 		var sendColour = document.getElementById('sendColour').value
 		var rcvColour = document.getElementById('rcvColour').value
 
@@ -413,7 +416,7 @@
 
 		var offsets = {}
 
-		
+
 
 		document.getElementById('update').onclick = function () {
 			var newUser = d3.select("#uname").property("value")
@@ -470,6 +473,29 @@
 				}
 
 
+
+
+			})
+
+		d3.select("#lockDates")
+			.on("click", function () {
+				if (lockedDates) {
+					lockedDates = false
+					d3.select(this).text("Lock Dates")
+
+					document.getElementById('startDate').disabled = false
+					document.getElementById('endDate').disabled = false
+					document.getElementById('updateDates').disabled = false
+					document.getElementById('resetDates').disabled = false
+				} else {
+					lockedDates = true
+					d3.select(this).text("Unlock Dates")
+					document.getElementById('startDate').disabled = true
+					document.getElementById('endDate').disabled = true
+					document.getElementById('updateDates').disabled = true
+					document.getElementById('resetDates').disabled = true
+
+				}
 
 
 			})
@@ -699,12 +725,14 @@
 			var firstDay = Math.floor(FandL[0] / (day_in_ms)) * day_in_ms
 			var lastDay = Math.floor(FandL[1] / (day_in_ms) + 1) * day_in_ms
 
-			d3.select("#startDate").property("value", datePickerFormat(firstDay))
-			d3.select("#endDate").property("value", datePickerFormat(lastDay))
+			if (!lockedDates) {
+				d3.select("#startDate").property("value", datePickerFormat(firstDay))
+				d3.select("#endDate").property("value", datePickerFormat(lastDay))
 
 
-			firstTimestamp = FandL[0]
-			lastTimestamp = FandL[1]
+				firstTimestamp = FandL[0]
+				lastTimestamp = FandL[1]
+			}
 		}
 
 
@@ -750,7 +778,9 @@
 				// fandl = firstAndLastTimestamps(result)
 				// firstTimestamp = fandl[0]
 				// lastTimestamp = fandl[1]
-
+				if(!lockedDates && document.getElementById('lockDates').disabled){
+					document.getElementById('lockDates').disabled=false
+				}
 
 				redraw(result)
 
@@ -759,8 +789,6 @@
 
 			fr.readAsText(files.item(0));
 		};
-
-		console.log(window.innerHeight)
 
 		var otherElHeights = d3.select(".controls").node().getBoundingClientRect().height +
 			d3.select(".header").node().getBoundingClientRect().height + 40;
@@ -819,26 +847,18 @@
 		function setScales(s, r) {
 
 
-			var maxSKey = d3.max(s, function (d) { return d.key; })
-			var maxRKey = d3.max(r, function (d) { return d.key; })
+			
 
-			if (!maxSKey) maxSKey = 0
-			if (!maxRKey) maxRKey = 0
-
-
-			var maxKey = Math.max(maxSKey, maxRKey) + 1;
-
-
-
+			var lTSKey = Math.floor((lastTimestamp - firstTimestamp) / period) + 1;
 
 			xScale = d3.scaleBand()
-				.domain(d3.range(maxKey))
+				.domain(d3.range(lTSKey))
 				.range([0, w])
 				.paddingInner(0.05);
 
 			svg.select(".axis").remove()
 
-			var gap = Math.floor(maxKey / 10)
+			var gap = Math.floor(lTSKey / 10)
 
 			if (gap == 0) {
 				gap++
@@ -846,19 +866,21 @@
 
 
 			var ticks = []
-			for (i = 0; i < maxKey; i += gap) {
+			for (i = Math.floor(gap/2); i < lTSKey; i += gap) {
 				ticks.push(i)
 			}
 
 			var xAxis = d3.axisBottom()
 				.scale(xScale)
 				.tickValues(ticks)
-				.tickFormat(d => (justDate(firstTimestamp + (d * period))));
+				.tickFormat(d => (justDate(firstTimestamp +(period/2) + (d * period))))
+				.tickSizeOuter(0);
 
 			var falseXAxis = d3.axisTop()
 				.scale(xScale)
 				.tickValues(ticks)
-				.tickFormat(d => "");
+				.tickFormat(d => "")
+				.tickSizeOuter(0);
 
 			svg.append("g")
 				.attr("class", "axis")
