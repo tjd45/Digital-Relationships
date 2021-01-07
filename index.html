@@ -269,10 +269,9 @@
 			margin-right: 5px;
 		}
 
-		.inclNames{
-			display:none;
+		.inclNames {
+			display: none;
 		}
-		
 	</style>
 </head>
 
@@ -405,6 +404,16 @@
 				document.getElementById("modalButton").click();
 			}
 		})
+
+		var resizeId;
+		$(window).resize(function () {
+			clearTimeout(resizeId);
+			resizeId = setTimeout(rescale, 500)
+		})
+
+		function rescale() {
+			initialiseElements()
+		}
 
 		window.onload = function () {
 			document.getElementById('modalButton').onclick = function () {
@@ -848,7 +857,7 @@
 
 		document.getElementById('exportImage').onclick = function () {
 			//get svg element.
-			saveSvgAsPng(document.getElementById("svg-graph"), currentJson.title+".png");
+			saveSvgAsPng(document.getElementById("svg-graph"), currentJson.title + ".png");
 
 
 		}
@@ -900,39 +909,60 @@
 
 		var otherElHeights = d3.select(".controls").node().getBoundingClientRect().height +
 			d3.select(".header").node().getBoundingClientRect().height + 40;
-
 		var otherElWidths = 450 + 20 + 8 + 11;
 
-		var w = window.innerWidth - otherElWidths;
-		var h = window.innerHeight - otherElHeights;
-		var padding = 20;
+		function initialiseElements() {
 
-		var svg = d3.select("body")
-			.append("div")
-			.attr("id", "svg_messages_div")
-			.append("svg")
-			.attr("width", w)
-			.attr("height", h)
-			.attr("id", "svg-graph");
+			d3.select("#svg_messages_div").remove()
+			d3.select("#clock").remove()
+			d3.select(".top-bars").remove()
+			d3.select(".bottom-bars").remove()
+			d3.select("#messageBox").remove()
+			w = window.innerWidth - otherElWidths;
+			h = window.innerHeight - otherElHeights;
+			padding = 20;
 
-		var clock = svg.append("g")
-			.attr("transform", "translate(" + w / 2 + "," + h / 2 + ")")
+
+			svg = d3.select("body")
+				.append("div")
+				.attr("id", "svg_messages_div")
+				.append("svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("id", "svg-graph");
+
+			clock = svg.append("g")
+				.attr("id","#clock")
+				.attr("transform", "translate(" + w / 2 + "," + h / 2 + ")")
+
+			topBars = svg.append("g")
+				.attr("class", "top-bars")
+
+			bottomBars = svg.append("g")
+				.attr("class", "bottom-bars")
+
+			messageBox = d3.select("#svg_messages_div")
+				.append("textarea")
+				.attr("readonly", true)
+				.attr("id", "messageBox")
+				.style("width", 450 + "px")
+				.style("height", h + "px")
+
+			if (currentJson) {
+				redraw(currentJson)
+			}
+		}
+
+
+
+		initialiseElements()
+
+
 
 		d3.select("#summaryText").text("Message between \nFirst message: ,Last message: \nMessages sent: " +
 			", Messages received: \nCharacters sent: , Characters received: ")
 
-		var topBars = svg.append("g")
-			.attr("class", "top-bars")
 
-		var bottomBars = svg.append("g")
-			.attr("class", "bottom-bars")
-
-		var messageBox = d3.select("#svg_messages_div")
-			.append("textarea")
-			.attr("readonly", true)
-			.attr("id", "messageBox")
-			.style("width", 450 + "px")
-			.style("height", h + "px")
 
 		function setClockScales(hourData) {
 			var maxVal = 0
@@ -1317,10 +1347,10 @@
 
 		function appendExportDetails() {
 			var yLoc = 20
-			if(inclNames){
+			if (inclNames) {
 				yLoc = 36
 			}
-			
+
 			var xLoc = 20
 
 			d3.select("#exportInfo").remove()
@@ -1390,13 +1420,13 @@
 
 				var pos = yLoc
 
-				if (inclNames){
+				if (inclNames) {
 					pos += 20
 				}
-				else{
-					if(!inclLegend)
-						pos+=16
-					
+				else {
+					if (!inclLegend)
+						pos += 16
+
 				}
 
 				if (inclLegend)
