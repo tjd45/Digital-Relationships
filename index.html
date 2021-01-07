@@ -6,6 +6,7 @@
 	<title>Digital Relationships: Thomas Davidson 2020</title>
 	<script type="text/javascript" src="d3.js"></script>
 	<script type="text/javascript" src="jquery-3.5.1.js"></script>
+	<script type="text/javascript" src="saveSvgAsPng.js"></script>
 	<style type="text/css">
 		#svg-graph {
 			background-color: black;
@@ -18,6 +19,13 @@
 			display: block;
 
 			margin: 10px;
+		}
+
+		#svg_messages_div text {
+			/* fill: white; */
+
+			/* font-family:Arial, Helvetica, sans-serif; */
+			font-size: 18px;
 		}
 
 		#messageBox {
@@ -111,9 +119,13 @@
 
 		.controlsRight {
 			height: 100%;
-
+			width: 250px;
 			float: left;
 
+		}
+
+		.controlsFarRight {
+			height: 100%;
 		}
 
 		.floated {
@@ -252,10 +264,15 @@
 		}
 
 		li {
-			margin-top:5px;
-			margin-left:5px;
-			margin-right:5px;
+			margin-top: 5px;
+			margin-left: 5px;
+			margin-right: 5px;
 		}
+
+		.inclNames{
+			display:none;
+		}
+		
 	</style>
 </head>
 
@@ -325,13 +342,29 @@
 			<button id="saveSelection">Save Selection</button>
 			<button id="clearSelections">Clear Selections</button>
 
+
 			<nav>
 				<ul id='previousSelections'>
-					
+
 
 				</ul>
 			</nav>
 
+
+
+		</div>
+		<div class="controlsFarRight">
+			Export Image Options </br>
+			<input class="inclNames" type="checkbox" id="inclNames" name="inclNames" value="Names">
+			<label class="inclNames" for="inclNames"> Include Names</label>
+			<input type="checkbox" id="inclLegend" name="inclLegend" value="Legend">
+			<label for="inclLegend"> Include Legend</label>
+			<input type="checkbox" id="inclStats" name="inclStats" value="Stats">
+			<label for="inclStats"> Include Stats</label>
+
+
+			<br>
+			<button id="exportImage">Export Image</button>
 		</div>
 
 
@@ -364,6 +397,7 @@
 	<script type="text/javascript">
 		var userName = "A girl has no name"
 		var lockedDates = false
+		var statsString = []
 
 		document.getElementById("modalUname").addEventListener("keyup", function (event) {
 			if (event.keyCode === 13) {
@@ -410,6 +444,10 @@
 		var indivMessages = true
 		var timeline = true
 
+		var inclNames = false
+		var inclLegend = false
+		var inclStats = false
+
 
 		var sendColour = document.getElementById('sendColour').value
 		var rcvColour = document.getElementById('rcvColour').value
@@ -419,10 +457,10 @@
 
 		var offsets = {}
 
-		function updateSavedSelections(data){
+		function updateSavedSelections(data) {
 			var savedSelections = d3.select("previousSelections")
-									.selectAll("li")
-									.data(data);
+				.selectAll("li")
+				.data(data);
 
 			savedSelections
 				.enter()
@@ -433,21 +471,21 @@
 			if (currentJson) {
 
 				var thisConv = currentJson.title
-				
-				if(!oldJson[thisConv]){
+
+				if (!oldJson[thisConv]) {
 					d3.select("#previousSelections").append("li").append("button").text(currentJson.title)
-						.on('click',function(d){
+						.on('click', function (d) {
 							console.log(thisConv)
 							currentJson = oldJson[thisConv]
-				
+
 							updateDateRange(currentJson)
 							redraw(currentJson)
 
-					})
+						})
 				}
 
 				oldJson[currentJson.title] = currentJson
-				
+
 			}
 		}
 
@@ -471,6 +509,27 @@
 			}
 
 
+		}
+
+		document.getElementById('inclNames').onchange = function () {
+			inclNames = this.checked
+			if (currentJson) {
+				redraw(currentJson)
+			}
+		}
+
+		document.getElementById('inclLegend').onchange = function () {
+			inclLegend = this.checked
+			if (currentJson) {
+				redraw(currentJson)
+			}
+		}
+
+		document.getElementById('inclStats').onchange = function () {
+			inclStats = this.checked
+			if (currentJson) {
+				redraw(currentJson)
+			}
 		}
 
 		document.getElementById('sendColour').onchange = function () {
@@ -785,6 +844,13 @@
 		document.getElementById('clear').onclick = function () {
 			currentJson = undefined
 			clearGraph()
+		}
+
+		document.getElementById('exportImage').onclick = function () {
+			//get svg element.
+			saveSvgAsPng(document.getElementById("svg-graph"), currentJson.title+".png");
+
+
 		}
 
 		document.getElementById('import').onclick = function () {
@@ -1229,6 +1295,135 @@
 
 		}
 
+		function appendExportDetails2() {
+			var exportInfo = appendExportDetails()
+			var Bbox = exportInfo.node().getBBox()
+			d3.select("#overlay").remove()
+			var padding = 10
+
+			if (inclNames || inclLegend || inclStats) {
+				svg.append("rect")
+					.attr("id", "overlay")
+					.attr("x", Bbox.x - padding)
+					.attr("y", Bbox.y - padding)
+					.attr("width", Bbox.width + (2 * padding))
+					.attr("height", Bbox.height + (2 * padding))
+					.style("fill", "grey")
+					.style("opacity", 0.5)
+
+				appendExportDetails()
+			}
+		}
+
+		function appendExportDetails() {
+			var yLoc = 20
+			if(inclNames){
+				yLoc = 36
+			}
+			
+			var xLoc = 20
+
+			d3.select("#exportInfo").remove()
+			var exportInfo = svg.append('g').attr("id", "exportInfo")
+
+			if (inclNames) {
+				d3.select("#exportNames").remove()
+				var names = exportInfo.append('g').attr("id", "exportNames")
+
+				names.append("text")
+					.attr("x", xLoc)
+					.attr("y", yLoc)
+					.attr("fill", "white")
+					.attr("font-family", "Arial, Helvetica, sans-serif")
+					.text("Conversation between " + userName + " and " + currentJson.title)
+			} else {
+				d3.select("#exportNames").remove()
+			}
+
+			if (inclLegend) {
+				d3.select("#exportLegend").remove()
+				var legend = exportInfo.append('g').attr("id", "exportLegend")
+				var pos = yLoc
+
+				if (inclNames)
+					pos += 20
+
+				legend.append("rect")
+					.attr("x", xLoc)
+					.attr("y", pos)
+					.attr("width", 20)
+					.attr("height", 20)
+					.style('fill', colourMap[userName])
+
+				legend.append("text")
+					.attr("x", xLoc + 30)
+					.attr("y", pos + 17)
+					.attr("fill", "white")
+					.attr("font-family", "Arial, Helvetica, sans-serif")
+					.text(userName)
+
+				pos += 30
+
+				legend.append("rect")
+					.attr("x", xLoc)
+					.attr("y", pos)
+					.attr("width", 20)
+					.attr("height", 20)
+					.style('fill', colourMap[currentJson.title])
+
+				legend.append("text")
+					.attr("x", xLoc + 30)
+					.attr("y", pos + 17)
+					.attr("fill", "white")
+					.attr("font-family", "Arial, Helvetica, sans-serif")
+					.text(currentJson.title)
+
+
+
+			} else {
+				d3.select("#exportLegend").remove()
+			}
+
+			if (inclStats) {
+				d3.select("#exportStats").remove()
+				stats = exportInfo.append('g').attr("id", "exportStats")
+
+				var pos = yLoc
+
+				if (inclNames)
+					pos += 20
+
+				if (inclLegend)
+					pos += 80
+
+				stats.append("text")
+					.attr("x", xLoc)
+					.attr("y", pos)
+					.attr("fill", "white")
+					.attr("font-family", "Arial, Helvetica, sans-serif")
+					.text(statsString[0])
+
+				pos += 20
+
+				stats.append("text")
+					.attr("x", xLoc)
+					.attr("y", pos)
+					.attr("fill", "white")
+					.attr("font-family", "Arial, Helvetica, sans-serif")
+					.text(statsString[1])
+
+
+
+			} else {
+				d3.select("#exportStats").remove()
+			}
+
+
+			return exportInfo
+
+
+		}
+
 		function redraw(json) {
 			clearGraph()
 
@@ -1237,8 +1432,12 @@
 			var output = handleJson(json, period)
 
 			//handleOffsets(output[0], output[3])
+			appendExportDetails2()
+
 
 			if (timeline) {
+
+
 				setScales(output[0], output[1])
 
 				drawTopBars(output[0], output[3])
@@ -1409,6 +1608,14 @@
 
 			partString = partString.substring(0, partString.length - 5)
 
+			statsString = []
+			statsString.push("Between " + fullTime(actualFirstTimestamp) + " and " + fullTime(actualLastTimestamp))
+			if (indivMessages) {
+				statsString.push(numSent + " messages sent and " + numRcv + " messages received")
+			} else {
+				statsString.push(numCharSent + " characters sent and " + numCharRcv + " characters received")
+			}
+
 			d3.select("#summaryText").text("Message between " + partString + "\nFirst message: " + fullTime(actualFirstTimestamp) +
 				", Last message: " + fullTime(actualLastTimestamp) + "\nMessages sent: " + numSent +
 				", Messages received: " + numRcv + "\nCharacters sent: " + numCharSent +
@@ -1438,6 +1645,8 @@
 
 
 		}
+
+
 
 
 	</script>
