@@ -1390,8 +1390,14 @@
 
 				var pos = yLoc
 
-				if (inclNames)
+				if (inclNames){
 					pos += 20
+				}
+				else{
+					if(!inclLegend)
+						pos+=16
+					
+				}
 
 				if (inclLegend)
 					pos += 80
