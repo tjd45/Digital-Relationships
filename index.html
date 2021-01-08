@@ -49,12 +49,15 @@
 		}
 
 		.fillerSegment {
-			opacity: 0.0;
+			stroke: #555555;
+			fill:white;
+			fill-opacity:0.0;
+			
 		}
 
 		.fillerSegment:hover {
 			fill: white;
-			opacity: 0.3;
+			fill-opacity: 0.4;
 		}
 
 		#tooltip {
@@ -138,8 +141,16 @@
 
 		}
 
+		@font-face{
+			font-family: clockFont;
+			src: url(ds-digital/DS-DIGI.TTF)
+		}
+
 		.clockText {
-			color: white
+			color: white;
+			font-family: clockFont;
+			/* font-family: courier, arial, helvetica; */
+			font-size:32px;
 		}
 
 		.colourSelector {
@@ -360,6 +371,8 @@
 			<label for="inclLegend"> Include Legend</label>
 			<input type="checkbox" id="inclStats" name="inclStats" value="Stats">
 			<label for="inclStats"> Include Stats</label>
+			<input type="checkbox" id="shortNames" name="shortNames" value="ShortNames">
+			<label for="shortNames"> Shorten Names </label>
 
 
 			<br>
@@ -456,6 +469,7 @@
 		var inclNames = false
 		var inclLegend = false
 		var inclStats = false
+		var shortNames = false
 
 
 		var sendColour = document.getElementById('sendColour').value
@@ -536,6 +550,13 @@
 
 		document.getElementById('inclStats').onchange = function () {
 			inclStats = this.checked
+			if (currentJson) {
+				redraw(currentJson)
+			}
+		}
+
+		document.getElementById('shortNames').onchange = function () {
+			shortNames = this.checked
 			if (currentJson) {
 				redraw(currentJson)
 			}
@@ -932,7 +953,7 @@
 				.attr("id", "svg-graph");
 
 			clock = svg.append("g")
-				.attr("id","#clock")
+				.attr("id", "#clock")
 				.attr("transform", "translate(" + w / 2 + "," + h / 2 + ")")
 
 			topBars = svg.append("g")
@@ -1178,7 +1199,7 @@
 		}
 
 		function drawClock(data) {
-			var clockRad = Math.min(h, w) / 2 - 100
+			var clockRad = Math.min(h, w)/2 - 80
 			clock.append("circle")
 				.style("fill", "#999999")
 				.attr("r", clockRad)
@@ -1188,29 +1209,33 @@
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.attr("x", -18)
-				.attr("y", - clockRad - 50)
+				.style('font-size','32px')
+				.attr("x", -35)
+				.attr("y", - clockRad - 9)
 				.text("00:00")
 
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.attr("x", -18)
-				.attr("y", clockRad + 50)
+				.style('font-size','32px')
+				.attr("x", -31)
+				.attr("y", clockRad + 32)
 				.text("12:00")
 
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.attr("x", clockRad + 50)
-				.attr("y", 9)
+				.style('font-size','32px')
+				.attr("x", clockRad + 9)
+				.attr("y", 10)
 				.text("06:00")
 
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.attr("x", - clockRad - 86)
-				.attr("y", 9)
+				.style('font-size','32px')
+				.attr("x", - clockRad - 62 - 9)
+				.attr("y", 10)
 				.text("18:00")
 
 			var colours = [sendColour, rcvColour]
@@ -1346,6 +1371,10 @@
 		}
 
 		function appendExportDetails() {
+
+			var fName = shortNames ? userName.split(" ")[0] : userName
+			var sName = shortNames ? currentJson.title.split(" ")[0]: currentJson.title
+
 			var yLoc = 20
 			if (inclNames) {
 				yLoc = 36
@@ -1360,12 +1389,15 @@
 				d3.select("#exportNames").remove()
 				var names = exportInfo.append('g').attr("id", "exportNames")
 
+
+
+
 				names.append("text")
 					.attr("x", xLoc)
 					.attr("y", yLoc)
 					.attr("fill", "white")
 					.attr("font-family", "Arial, Helvetica, sans-serif")
-					.text("Conversation between " + userName + " and " + currentJson.title)
+					.text("Conversation between " + fName + " and " + sName)
 			} else {
 				d3.select("#exportNames").remove()
 			}
@@ -1390,7 +1422,7 @@
 					.attr("y", pos + 17)
 					.attr("fill", "white")
 					.attr("font-family", "Arial, Helvetica, sans-serif")
-					.text(userName)
+					.text(fName)
 
 				pos += 30
 
@@ -1406,7 +1438,7 @@
 					.attr("y", pos + 17)
 					.attr("fill", "white")
 					.attr("font-family", "Arial, Helvetica, sans-serif")
-					.text(currentJson.title)
+					.text(sName)
 
 
 
