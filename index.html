@@ -104,6 +104,7 @@
 			height: 210px;
 			margin: 10px;
 			clear:both;
+			
 		}
 
 		.controlsLeft {
@@ -116,7 +117,7 @@
 
 		.controlsMiddle {
 			height: 100%;
-			width: 800px;
+			width: 610px;
 			float: left;
 
 
@@ -130,8 +131,9 @@
 		}
 
 		.controlsFarRight {
-			height: 100%;
+			
 			float: left;
+			margin-bottom: 10px;
 		}
 
 		.floated {
@@ -299,6 +301,10 @@
 			float:right;
 			height: 50px;
 		}
+
+		input[type="date"]{
+			width: 133px;
+		}
 	</style>
 </head>
 
@@ -352,9 +358,9 @@
 			<label class="floated" for="endDate">End Date:</label>
 			<input class="floated" type="date" id="endDate" name="endDate">
 
-			<button id="updateDates" class="floated">Update Dates</button>
-			<button id="resetDates" class="floated">Reset Dates</button>
-			<button id="lockDates" class="floated" disabled>Lock Dates</button>
+			<button id="updateDates" class="floated">Update</button>
+			<button id="resetDates" class="floated">Reset</button>
+			<button id="lockDates" class="floated" disabled>Lock</button>
 
 			<br />
 			<p id="summaryText"></p>
@@ -386,9 +392,9 @@
 			<input class="inclNames" type="checkbox" id="inclNames" name="inclNames" value="Names">
 			<label class="inclNames" for="inclNames"> Include Names</label>
 			<input type="checkbox" id="inclLegend" name="inclLegend" value="Legend">
-			<label for="inclLegend"> Include Legend</label>
+			<label for="inclLegend"> Include Legend</label> </br>
 			<input type="checkbox" id="inclStats" name="inclStats" value="Stats">
-			<label for="inclStats"> Include Stats</label>
+			<label for="inclStats"> Include Stats</label> </br>
 			<input type="checkbox" id="shortNames" name="shortNames" value="ShortNames">
 			<label for="shortNames"> Shorten Names </label>
 
@@ -433,6 +439,13 @@
 			if (event.keyCode === 13) {
 				event.preventDefault();
 				document.getElementById("modalButton").click();
+			}
+		})
+
+		document.getElementById("uname").addEventListener("keyup", function (event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("update").click();
 			}
 		})
 
