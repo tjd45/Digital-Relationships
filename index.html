@@ -3,11 +3,22 @@
 
 <head>
 	<meta charset="utf-8">
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="theme-color" content="#ffffff">
 	<title>Digital Relationships: Thomas Davidson 2020</title>
 	<script type="text/javascript" src="d3.js"></script>
 	<script type="text/javascript" src="jquery-3.5.1.js"></script>
 	<script type="text/javascript" src="saveSvgAsPng.js"></script>
 	<style type="text/css">
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 15px;
+		}
+
 		#svg-graph {
 			background-color: black;
 			margin-right: 8px;
@@ -16,7 +27,7 @@
 		}
 
 		#svg_messages_div {
-			clear:left;
+			clear: left;
 			display: block;
 
 			margin: 10px;
@@ -51,9 +62,9 @@
 
 		.fillerSegment {
 			stroke: #555555;
-			fill:white;
-			fill-opacity:0.0;
-			
+			fill: white;
+			fill-opacity: 0.0;
+
 		}
 
 		.fillerSegment:hover {
@@ -103,8 +114,8 @@
 			display: block;
 			height: 210px;
 			margin: 10px;
-			clear:both;
-			
+			clear: both;
+
 		}
 
 		.controlsLeft {
@@ -131,7 +142,7 @@
 		}
 
 		.controlsFarRight {
-			
+
 			float: left;
 			margin-bottom: 10px;
 		}
@@ -146,21 +157,27 @@
 
 		}
 
-		@font-face{
+		@font-face {
 			font-family: clockFont;
 			src: url(ds-digital/DS-DIGI.TTF)
+		}
+
+		@font-face {
+			font-family: openSans;
+			src: url(Open_Sans/OpenSans-Regular.ttf)
 		}
 
 		.clockText {
 			color: white;
 			font-family: clockFont;
 			/* font-family: courier, arial, helvetica; */
-			font-size:32px;
+			font-size: 32px;
 		}
 
 		.colourSelector {
 			margin-right: 10px;
 			margin-bottom: 5px;
+			margin-top: 5px;
 		}
 
 		.header {
@@ -242,7 +259,7 @@
 
 
 		#modal {
-			/* display: none; */
+			display: none;
 			position: fixed;
 			font-family: Arial, Helvetica, sans-serif;
 			top: 0;
@@ -272,9 +289,7 @@
 			background-color: #AAAAAA;
 			height: 100px;
 			width: 220px;
-		}
-
-		nav ul {
+			margin-top: 10px;
 			overflow: hidden;
 			list-style-type: none;
 			padding: 0px;
@@ -297,13 +312,27 @@
 			margin-left: 10px;
 		}
 
-		#twitter-button{
-			float:right;
+		#twitter-button {
+			float: right;
 			height: 50px;
 		}
 
-		input[type="date"]{
+		input[type="date"] {
 			width: 133px;
+			border-width: 0px;
+		}
+
+		#selectFiles {
+			padding-bottom: 6px;
+			border-width: 2px;
+		}
+
+		#exportImage {
+			margin-top: 6px;
+		}
+
+		.selectionButton {
+			margin-top: 5px;
 		}
 	</style>
 </head>
@@ -317,7 +346,7 @@
 		<h1>Digital Relationships by Thomas Davidson</h1>
 		<a href="https://sciencegallery.org/youth-symposium" target="_blank"><img id='SGLogo' src="SGLogo.png"></a>
 		<a href="https://twitter.com/td_viz" target="_blank"><img id='twitter-button' src="twitterLogo.png"></a>
-		
+
 	</div>
 
 	<div class="controls">
@@ -367,14 +396,14 @@
 
 		</div>
 		<div class="controlsRight">
-			<input class="colourSelector" type="color" id="sendColour" value="#0000ff"><label id="sendColourLabel"
-				for="sendColour"></label>
+			<input class="colourSelector" type="color" id="sendColour" value="#0000ff"><label class="colourLabel"
+				id="sendColourLabel" for="sendColour"></label>
 			<br />
-			<input class="colourSelector" type="color" id="rcvColour" value="#00ff00"><label id="rcvColourLabel"
-				for="rcvColour"></label>
+			<input class="colourSelector" type="color" id="rcvColour" value="#00ff00"><label class="colourLabel"
+				id="rcvColourLabel" for="rcvColour"></label>
 			<br />
-			<button id="saveSelection">Save Selection</button>
-			<button id="clearSelections">Clear Selections</button>
+			<button class="selectionButton" id="saveSelection">Save Selection</button>
+			<button class="selectionButton" id="clearSelections">Clear Selections</button>
 
 
 			<nav>
@@ -642,7 +671,7 @@
 			.on("click", function () {
 				if (lockedDates) {
 					lockedDates = false
-					d3.select(this).text("Lock Dates")
+					d3.select(this).text("Lock")
 
 					document.getElementById('startDate').disabled = false
 					document.getElementById('endDate').disabled = false
@@ -650,7 +679,7 @@
 					document.getElementById('resetDates').disabled = false
 				} else {
 					lockedDates = true
-					d3.select(this).text("Unlock Dates")
+					d3.select(this).text("Unlock")
 					document.getElementById('startDate').disabled = true
 					document.getElementById('endDate').disabled = true
 					document.getElementById('updateDates').disabled = true
@@ -1230,7 +1259,7 @@
 		}
 
 		function drawClock(data) {
-			var clockRad = Math.min(h, w)/2 - 80
+			var clockRad = Math.min(h, w) / 2 - 80
 			clock.append("circle")
 				.style("fill", "#999999")
 				.attr("r", clockRad)
@@ -1240,7 +1269,7 @@
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.style('font-size','32px')
+				.style('font-size', '32px')
 				.attr("x", -35)
 				.attr("y", - clockRad - 9)
 				.text("00:00")
@@ -1248,7 +1277,7 @@
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.style('font-size','32px')
+				.style('font-size', '32px')
 				.attr("x", -31)
 				.attr("y", clockRad + 32)
 				.text("12:00")
@@ -1256,7 +1285,7 @@
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.style('font-size','32px')
+				.style('font-size', '32px')
 				.attr("x", clockRad + 9)
 				.attr("y", 10)
 				.text("06:00")
@@ -1264,7 +1293,7 @@
 			clock.append("text")
 				.attr("class", "clockText")
 				.style('fill', 'white')
-				.style('font-size','32px')
+				.style('font-size', '32px')
 				.attr("x", - clockRad - 62 - 9)
 				.attr("y", 10)
 				.text("18:00")
@@ -1404,7 +1433,7 @@
 		function appendExportDetails() {
 
 			var fName = shortNames ? userName.split(" ")[0] : userName
-			var sName = shortNames ? currentJson.title.split(" ")[0]: currentJson.title
+			var sName = shortNames ? currentJson.title.split(" ")[0] : currentJson.title
 
 			var yLoc = 20
 			if (inclNames) {
