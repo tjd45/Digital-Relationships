@@ -484,6 +484,7 @@
 		var lockedDates = false
 		var statsString = []
 		var autoResize = true
+		var messageTextBox = ""
 
 		document.getElementById("modalUname").addEventListener("keyup", function (event) {
 			if (event.keyCode === 13) {
@@ -579,7 +580,7 @@
 				if (!oldJson[thisConv]) {
 					d3.select("#previousSelections").append("li").append("button").text(currentJson.title)
 						.on('click', function (d) {
-							console.log(thisConv)
+							messageTextBox = ""
 							currentJson = oldJson[thisConv]
 
 							updateDateRange(currentJson)
@@ -747,6 +748,7 @@
 
 		d3.selectAll("input[name='clockOrTimeline']")
 			.on("click", function () {
+				messageTextBox = ""
 				var view = d3.select(this).node().value;
 				if (view == "Clock") {
 					timeline = false
@@ -791,23 +793,37 @@
 		}
 
 		function printMessages(key) {
+
+			if (timeline) {
+				var thisSent = sentMess
+				var thisRcv = rcvMess
+				var threshold = day_in_ms
+			} else {
+				var thisSent = sentHoursMess
+				var thisRcv = rcvHoursMess
+				var threshold = day_in_ms/24
+			}
+
 			document.getElementById('messageBox').value = ""
 			document.getElementById('messageBox').scrollTop = 0
 			var sLength = 0
 			var rLength = 0
 
-			if (sentMess[key]) {
-				sLength = sentMess[key].length
+			if (thisSent[key]) {
+				sLength = thisSent[key].length
 			}
 
-			if (rcvMess[key]) {
-				rLength = rcvMess[key].length
+			if (thisRcv[key]) {
+				rLength = thisRcv[key].length
 			}
 
 			var total = sLength + rLength
 
 			var scount = 0
 			var rcount = 0
+
+			var diff = 0
+			var lmTS = 0
 
 			// console.log("-----------------------------")
 
@@ -820,7 +836,7 @@
 					if (rcount > rLength - 1) {
 						r = false
 					} else {
-						if (sentMess[key][scount].timestamp < rcvMess[key][rcount].timestamp) {
+						if (thisSent[key][scount].timestamp < thisRcv[key][rcount].timestamp) {
 							r = false
 						} else {
 							r = true
@@ -832,12 +848,28 @@
 
 				}
 
+				if(r){
+					diff = thisRcv[key][rcount].timestamp - lmTS
+					lmTS = thisRcv[key][rcount].timestamp
+				}else{
+					diff = thisSent[key][scount].timestamp - lmTS
+					lmTS = thisSent[key][scount].timestamp
+				}
+
+				console.log(diff)
+
+				if(i>0){
+					if(diff>threshold){
+						document.getElementById('messageBox').value += "=======================\n"
+					}
+				}
+
 				if (r) {
-					printMessage(people[1], rcvMess[key][rcount])
+					printMessage(people[1], thisRcv[key][rcount])
 					rcount++
 
 				} else {
-					printMessage(people[0], sentMess[key][scount])
+					printMessage(people[0], thisSent[key][scount])
 					scount++
 				}
 
@@ -845,10 +877,12 @@
 
 			}
 
+			messageTextBox = document.getElementById('messageBox').value;
 
 		}
 
 		function printMessage(person, message) {
+			
 			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + person + ": " + message.content + "\n"
 			// console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
 		}
@@ -891,7 +925,7 @@
 			console.log("Clearing graph")
 			clock.selectAll("*").remove()
 			svg.selectAll(".axis").remove()
-			document.getElementById('messageBox').value = ""
+			document.getElementById('messageBox').value = messageTextBox
 			bottomBars.selectAll("*").remove()
 			topBars.selectAll("*").remove()
 		}
@@ -954,6 +988,7 @@
 
 		document.getElementById('clear').onclick = function () {
 			currentJson = undefined
+			messageTextBox = ""
 			clearGraph()
 		}
 
@@ -982,6 +1017,8 @@
 
 					var newResult = combineJson(currentJson, result)
 					result = newResult
+				} else {
+					messageTextBox = ""
 				}
 
 				currentJson = result
@@ -1121,7 +1158,7 @@
 				document.getElementById('narrow').disabled = false
 				if (mbw < 250) {
 					document.getElementById('widen').disabled = true
-				}else{
+				} else {
 					document.getElementById('widen').disabled = false
 				}
 			}
@@ -1130,7 +1167,7 @@
 				document.getElementById('shorten').disabled = true
 			} else {
 				document.getElementById('shorten').disabled = false
-				
+
 			}
 
 			padding = 20;
@@ -1209,7 +1246,7 @@
 			svg.select(".axis").remove()
 
 			var numTicks = Math.min(10, Math.round(w / 100))
-			console.log(numTicks)
+
 			var gap = Math.floor(lTSKey / numTicks)
 
 			if (gap == 0) {
@@ -1392,6 +1429,7 @@
 				})
 				.on("click", function (d) {
 					printMessages(d.key)
+
 				});;
 
 		}
@@ -1521,6 +1559,10 @@
 
 					//Hide the tooltip
 					d3.select("#tooltip").classed("hidden", true);
+
+				})
+				.on("click", function (d,i) {
+					printMessages(i)
 
 				})
 
@@ -1704,11 +1746,16 @@
 
 				drawTopBars(output[0], output[3])
 				drawBottomBars(output[1])
+
+
 			} else {
 				setClockScales(output[2])
 
 				drawClock(output[2])
+
 			}
+
+
 		}
 
 		function handleOffsets(j, name) {
@@ -1774,6 +1821,9 @@
 			rcvMessCount = {}
 			rcvMess = {}
 
+			sentHoursMess = {}
+			rcvHoursMess = {}
+
 			var firstSet = false
 
 			var lastDayNum = Math.floor((lastTimestamp - firstTimestamp) / period)
@@ -1789,6 +1839,7 @@
 			var hoursMsg = new Array(24)
 			for (var i = 0; i < 24; i++) {
 				hoursMsg[i] = [0, 0]
+
 			}
 
 			for (var i = rawJson.messages.length - 1; i > -1; i--) {
@@ -1831,6 +1882,11 @@
 							sentMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
 						}
 
+						if (sentHoursMess[hourNum]) {
+							sentHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+						} else {
+							sentHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+						}
 						hoursMsg[hourNum][0] += thisMessLen
 
 
@@ -1843,6 +1899,12 @@
 						} else {
 							rcvMessCount[dayNum] = thisMessLen
 							rcvMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+						}
+
+						if (rcvHoursMess[hourNum]) {
+							rcvHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+						} else {
+							rcvHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
 						}
 
 						hoursMsg[hourNum][1] += thisMessLen
