@@ -29,7 +29,7 @@
 		#svg_messages_div {
 			clear: left;
 			display: block;
-
+			/* overflow-x:scroll; */
 			margin: 10px;
 		}
 
@@ -37,7 +37,7 @@
 			/* fill: white; */
 
 			/* font-family:Arial, Helvetica, sans-serif; */
-			font-size: 18px;
+			/* font-size: 18px; */
 		}
 
 		#messageBox {
@@ -107,7 +107,14 @@
 		}
 
 		.axis text {
+			font-family: clockFont;
+			font-size: 15px;
 			fill: white;
+		}
+
+		#exportInfo {
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 18px;
 		}
 
 		.controls {
@@ -334,6 +341,11 @@
 		.selectionButton {
 			margin-top: 5px;
 		}
+
+		.graphControls {
+			clear: both;
+			margin: 10px;
+		}
 	</style>
 </head>
 
@@ -435,6 +447,14 @@
 
 	</div>
 
+	<div class="graphControls">
+		<button id="disable">Disable Autosize</button>
+		<button id="widen" disabled>Widen</button>
+		<button id="narrow" disabled>Narrow</button>
+		<button id="lengthen" disabled>Lengthen</button>
+		<button id="shorten" disabled>Shorten</button>
+	</div>
+
 	<div id="modal">
 		<div class="modalconent">
 			<h1></h1>
@@ -463,6 +483,7 @@
 		var userName = "A girl has no name"
 		var lockedDates = false
 		var statsString = []
+		var autoResize = true
 
 		document.getElementById("modalUname").addEventListener("keyup", function (event) {
 			if (event.keyCode === 13) {
@@ -988,19 +1009,130 @@
 			fr.readAsText(files.item(0));
 		};
 
+		d3.select("#disable")
+			.on("click", function () {
+				if (autoResize) {
+					autoResize = false
+					d3.select(this).text("Enable Autosize")
+
+					document.getElementById('widen').disabled = false
+					document.getElementById('narrow').disabled = false
+					document.getElementById('lengthen').disabled = false
+					document.getElementById('shorten').disabled = false
+				} else {
+					autoResize = true
+					initialiseElements()
+					d3.select(this).text("Disable Autosize")
+					document.getElementById('widen').disabled = true
+					document.getElementById('narrow').disabled = true
+					document.getElementById('lengthen').disabled = true
+					document.getElementById('shorten').disabled = true
+
+				}
+
+
+			})
+
+		d3.select("#narrow").on("click", function () {
+			resizeElements(-100, 0)
+		})
+
+		d3.select("#widen").on("click", function () {
+			resizeElements(100, 0)
+		})
+
+		d3.select("#shorten").on("click", function () {
+			resizeElements(0, -100)
+		})
+
+		d3.select("#lengthen").on("click", function () {
+			resizeElements(0, 100)
+		})
+
+		var mbw = 450;
+
 		var otherElHeights = d3.select(".controls").node().getBoundingClientRect().height +
-			d3.select(".header").node().getBoundingClientRect().height + 40;
-		var otherElWidths = 450 + 20 + 8 + 11;
+			d3.select(".header").node().getBoundingClientRect().height + d3.select(".graphControls").node().getBoundingClientRect().height + 50;
+		var otherElWidths = mbw + 20 + 8 + 11;
 
 		function initialiseElements() {
 
+			if (autoResize) {
+				mbw = 450
+				d3.select("#svg_messages_div").remove()
+				d3.select("#clock").remove()
+				d3.select(".top-bars").remove()
+				d3.select(".bottom-bars").remove()
+				d3.select("#messageBox").remove()
+				w = window.innerWidth - otherElWidths;
+				h = window.innerHeight - otherElHeights;
+				padding = 20;
+
+
+				svg = d3.select("body")
+					.append("div")
+					.attr("id", "svg_messages_div")
+					.append("svg")
+					.attr("width", w)
+					.attr("height", h)
+					.attr("id", "svg-graph");
+
+				clock = svg.append("g")
+					.attr("id", "#clock")
+					.attr("transform", "translate(" + w / 2 + "," + h / 2 + ")")
+
+				topBars = svg.append("g")
+					.attr("class", "top-bars")
+
+				bottomBars = svg.append("g")
+					.attr("class", "bottom-bars")
+
+				messageBox = d3.select("#svg_messages_div")
+					.append("textarea")
+					.attr("readonly", true)
+					.attr("id", "messageBox")
+					.style("width", mbw + "px")
+					.style("height", h + "px")
+
+
+				if (currentJson) {
+					redraw(currentJson)
+				}
+			} else {
+
+			}
+
+
+		}
+
+		function resizeElements(xChange, yChange) {
 			d3.select("#svg_messages_div").remove()
 			d3.select("#clock").remove()
 			d3.select(".top-bars").remove()
 			d3.select(".bottom-bars").remove()
 			d3.select("#messageBox").remove()
-			w = window.innerWidth - otherElWidths;
-			h = window.innerHeight - otherElHeights;
+			w = w + xChange;
+			h = h + yChange;
+			mbw = mbw - xChange;
+
+			if (w < 250) {
+				document.getElementById('narrow').disabled = true
+			} else {
+				document.getElementById('narrow').disabled = false
+				if (mbw < 250) {
+					document.getElementById('widen').disabled = true
+				}else{
+					document.getElementById('widen').disabled = false
+				}
+			}
+
+			if (h < 250) {
+				document.getElementById('shorten').disabled = true
+			} else {
+				document.getElementById('shorten').disabled = false
+				
+			}
+
 			padding = 20;
 
 
@@ -1026,15 +1158,14 @@
 				.append("textarea")
 				.attr("readonly", true)
 				.attr("id", "messageBox")
-				.style("width", 450 + "px")
+				.style("width", mbw + "px")
 				.style("height", h + "px")
+
 
 			if (currentJson) {
 				redraw(currentJson)
 			}
 		}
-
-
 
 		initialiseElements()
 
@@ -1077,23 +1208,28 @@
 
 			svg.select(".axis").remove()
 
-			var gap = Math.floor(lTSKey / 10)
+			var numTicks = Math.min(10, Math.round(w / 100))
+			console.log(numTicks)
+			var gap = Math.floor(lTSKey / numTicks)
 
 			if (gap == 0) {
 				gap++
 			}
-
 
 			var ticks = []
 			for (i = Math.floor(gap / 2); i < lTSKey; i += gap) {
 				ticks.push(i)
 			}
 
+
 			var xAxis = d3.axisBottom()
 				.scale(xScale)
 				.tickValues(ticks)
 				.tickFormat(d => (justDate(firstTimestamp + (period / 2) + (d * period))))
 				.tickSizeOuter(0);
+
+
+
 
 			var falseXAxis = d3.axisTop()
 				.scale(xScale)
@@ -1105,6 +1241,8 @@
 				.attr("class", "axis")
 				.attr("transform", "translate(0," + (h / 2 - 12) + ")")
 				.call(xAxis)
+				.selectAll("text")
+				.attr("y", "7px")
 
 			svg.append("g")
 				.attr("class", "axis")
@@ -1481,7 +1619,6 @@
 					.attr("x", xLoc + 30)
 					.attr("y", pos + 17)
 					.attr("fill", "white")
-					.attr("font-family", "Arial, Helvetica, sans-serif")
 					.text(fName)
 
 				pos += 30
@@ -1497,7 +1634,6 @@
 					.attr("x", xLoc + 30)
 					.attr("y", pos + 17)
 					.attr("fill", "white")
-					.attr("font-family", "Arial, Helvetica, sans-serif")
 					.text(sName)
 
 
@@ -1528,7 +1664,6 @@
 					.attr("x", xLoc)
 					.attr("y", pos)
 					.attr("fill", "white")
-					.attr("font-family", "Arial, Helvetica, sans-serif")
 					.text(statsString[0])
 
 				pos += 20
@@ -1537,7 +1672,6 @@
 					.attr("x", xLoc)
 					.attr("y", pos)
 					.attr("fill", "white")
-					.attr("font-family", "Arial, Helvetica, sans-serif")
 					.text(statsString[1])
 
 
