@@ -882,7 +882,7 @@
 
 		function printMessage(person, message) {
 			
-			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + person + ": " + message.content + "\n"
+			document.getElementById('messageBox').value += fullTime(message.timestamp) + " " + message.sender + ": " + message.content + "\n"
 			// console.log(fullTime(message.timestamp) + " " + person + ": " + message.content)
 		}
 
@@ -1874,17 +1874,17 @@
 						if (sentMessCount[dayNum]) {
 
 							sentMessCount[dayNum] = sentMessCount[dayNum] + thisMessLen
-							sentMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+							sentMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content,sender: thisMess.sender_name })
 
 						} else {
 							sentMessCount[dayNum] = thisMessLen
-							sentMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+							sentMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name }]
 						}
 
 						if (sentHoursMess[hourNum]) {
-							sentHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+							sentHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name })
 						} else {
-							sentHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+							sentHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name }]
 						}
 						hoursMsg[hourNum][0] += thisMessLen
 
@@ -1894,16 +1894,16 @@
 						numCharRcv += charCounter
 						if (rcvMessCount[dayNum]) {
 							rcvMessCount[dayNum] = rcvMessCount[dayNum] + thisMessLen
-							rcvMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+							rcvMess[dayNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name })
 						} else {
 							rcvMessCount[dayNum] = thisMessLen
-							rcvMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+							rcvMess[dayNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name }]
 						}
 
 						if (rcvHoursMess[hourNum]) {
-							rcvHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content })
+							rcvHoursMess[hourNum].push({ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name })
 						} else {
-							rcvHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content }]
+							rcvHoursMess[hourNum] = [{ timestamp: thisMess.timestamp_ms, content: thisMess.content, sender: thisMess.sender_name }]
 						}
 
 						hoursMsg[hourNum][1] += thisMessLen
