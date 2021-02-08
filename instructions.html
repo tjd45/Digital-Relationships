@@ -1,0 +1,441 @@
+<head>
+    <meta charset="utf-8">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <title>Digital Relationships: Thomas Davidson 2020</title>
+    <script type="text/javascript" src="d3.js"></script>
+    <script type="text/javascript" src="jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="saveSvgAsPng.js"></script>
+    <style type="text/css">
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+        }
+
+        #svg-graph {
+            background-color: black;
+            margin-right: 8px;
+            float: left;
+
+        }
+
+        #svg_messages_div {
+            clear: left;
+            display: block;
+            /* overflow-x:scroll; */
+            margin: 10px;
+        }
+
+        #svg_messages_div text {
+            /* fill: white; */
+
+            /* font-family:Arial, Helvetica, sans-serif; */
+            /* font-size: 18px; */
+        }
+
+        a:link {
+            color: rgb(0, 128, 117);
+            background-color: transparent;
+            text-decoration: none;
+        }
+
+        a:visited {
+            color: pink;
+            background-color: transparent;
+            text-decoration: none;
+        }
+
+        #messageBox {
+            box-sizing: border-box;
+            resize: none;
+            overflow-x: hidden;
+            background-color: #BBBBBB;
+        }
+
+        /* rect:hover {
+			fill: orange;
+		} */
+
+        .fillerRect {
+            opacity: 0.0;
+        }
+
+        .fillerRect:hover {
+            fill: white;
+            opacity: 0.3;
+        }
+
+        .fillerSegment {
+            stroke: #555555;
+            fill: white;
+            fill-opacity: 0.0;
+
+        }
+
+        .fillerSegment:hover {
+            fill: white;
+            fill-opacity: 0.4;
+        }
+
+        #tooltip {
+            position: absolute;
+            width: 300px;
+            height: auto;
+            padding: 10px;
+            background-color: white;
+            color: black;
+            -webkit-border-radius: 10px;
+            -moz-border-radius: 10px;
+            border-radius: 10px;
+            -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+        }
+
+        #tooltip.hidden {
+            display: none;
+        }
+
+        #tooltip p {
+            margin: 0;
+            font-family: sans-serif;
+            font-size: 16px;
+            line-height: 20px;
+            white-space: pre-wrap;
+        }
+
+        .axis path,
+        .axis line {
+            stroke: white;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: clockFont;
+            font-size: 15px;
+            fill: white;
+        }
+
+        #exportInfo {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18px;
+        }
+
+        .controls {
+            display: block;
+            height: 210px;
+            margin: 10px;
+            clear: both;
+
+        }
+
+        .controlsLeft {
+            height: 100%;
+            width: 330px;
+            float: left;
+
+
+        }
+
+        .controlsMiddle {
+            height: 100%;
+            width: 610px;
+            float: left;
+
+
+        }
+
+        .controlsRight {
+            height: 100%;
+            width: 250px;
+            float: left;
+
+        }
+
+        .controlsFarRight {
+
+            float: left;
+            margin-bottom: 10px;
+        }
+
+        .floated {
+            float: left;
+            margin-right: 5px;
+        }
+
+        #summaryText {
+            white-space: pre-wrap;
+
+        }
+
+        @font-face {
+            font-family: clockFont;
+            src: url(ds-digital/DS-DIGI.TTF)
+        }
+
+        @font-face {
+            font-family: openSans;
+            src: url(Open_Sans/OpenSans-Regular.ttf)
+        }
+
+        .clockText {
+            color: white;
+            font-family: clockFont;
+            /* font-family: courier, arial, helvetica; */
+            font-size: 32px;
+        }
+
+        .colourSelector {
+            margin-right: 10px;
+            margin-bottom: 5px;
+            margin-top: 5px;
+        }
+
+        .header {
+            padding: 10px;
+            text-align: left;
+            background: #333333;
+            color: white;
+            font-size: 15px;
+            border-bottom: 1px white solid;
+            margin-bottom: 0px;
+            margin-top: 0px;
+            font-family: courier, arial, helvetica;
+            height: 50px;
+        }
+
+        h1 {
+            margin: 0px;
+            margin-right: 5px;
+            float: left;
+
+        }
+
+
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #333333;
+            color: white;
+
+        }
+
+
+
+
+
+        ::-webkit-scrollbar-thumb {
+            background: #999999;
+            border: 1px solid #333333;
+            border-radius: 50px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777777;
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: #777777;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #333333;
+            border: 0px none #444444;
+            border-radius: 53px;
+        }
+
+        ::-webkit-scrollbar-track:hover {
+            background: #333333;
+        }
+
+        ::-webkit-scrollbar-track:active {
+            background: #333333;
+        }
+
+        ::-webkit-scrollbar {
+            width: 11px;
+            height: 11px;
+        }
+
+        ::-webkit-scrollbar-button {
+            width: 0px;
+            height: 0px;
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+
+        #modal {
+            /* display: none; */
+            position: fixed;
+            font-family: Arial, Helvetica, sans-serif;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 99999;
+            height: 100%;
+            width: 100%;
+        }
+
+        .modalconent {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            color: black;
+            width: 80%;
+            padding: 20px;
+        }
+
+        #modalButton {
+            float: right;
+        }
+
+        nav ul {
+            background-color: #AAAAAA;
+            height: 100px;
+            width: 220px;
+            margin-top: 10px;
+            overflow: hidden;
+            list-style-type: none;
+            padding: 0px;
+            overflow-y: auto;
+        }
+
+        li {
+            margin-top: 5px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        .inclNames {
+            display: none;
+        }
+
+        #SGLogo {
+            float: right;
+            height: 50px;
+            margin-left: 10px;
+        }
+
+        #twitter-button {
+            float: right;
+            height: 50px;
+        }
+
+        input[type="date"] {
+            width: 133px;
+            border-width: 0px;
+        }
+
+        #selectFiles {
+            padding-bottom: 6px;
+            border-width: 2px;
+        }
+
+        #exportImage {
+            margin-top: 6px;
+        }
+
+        .selectionButton {
+            margin-top: 5px;
+        }
+
+        .graphControls {
+            clear: both;
+            margin: 10px;
+        }
+
+        h2 {
+            padding:10px;
+        }
+
+        .header a:link {
+            color: white;
+        }
+
+        .header a:visited {
+            color: white;
+        }
+
+        .header a:hover {
+            color: grey;
+        }
+
+        #personal:link {
+            color: white;
+			text-decoration: none;
+        }
+
+        #personal:visited {
+            color: white;
+        }
+     
+    </style>
+</head>
+
+<body>
+    <div id="tooltip" class="hidden">
+        <p><span id="value">1000</span></p>
+    </div>
+
+    <div class="header">
+        <h1><a href="index.html">Digital Relationships</a> by <a id="personal" href="https://people.mpi-sws.org/~tdavidso/" target="_none">Thomas Davidson</a></h1>
+        <a href="https://sciencegallery.org/youth-symposium" target="_blank"><img id='SGLogo' src="SGLogo.png"></a>
+        <a href="https://twitter.com/td_viz" target="_blank"><img id='twitter-button' src="twitterLogo.png"></a>
+
+    </div>
+
+    <div class="downloadInstructions">
+        <h2>Download Instructions</h2>
+        <ol>
+            <li>Go to <a href="http://www.facebook.com" target="_blank">facebook.com</a></li>
+            <li>Click the arrow in the top right corner </li>
+            <li>Select "Settings and privacy"</li>
+            <li>Select "Settings"</li>
+            <li>Select "Your Facebook information" on the tab on the left hand side</li>
+            <li>Select "Download your information" from the options</li>
+            <li>At the top right of the "Your information" pane, click "Deselect all"</li>
+            <li>*IMPORTANT* - Change the "Format" option from "HTML" to "JSON"</li>
+            <li>Scroll down and tick just the checkbox next to "Messages"</li>
+            <li>Click "Create File"</li>
+            <li>You will be emailed a link to download your data in a few hours.</li>
+            <li>Follow the link and download your file to somewhere you can access on your computer</li>
+        </ol>
+        <h2>Usage Instructions</h2>
+        <ol>
+            <li>Go to the <a href="index.html" target="_blank">Front Page</a></li>
+            <li>Type your name <em>exactly</em> as it appears on Facebook in messages (this can be changed later)</li>
+            <li>Press the "Enter Site" button when you have done this</li>
+            <li>Click "Choose file" and navigate to where you have downloaded your messaging data to.</li>
+            <li>Click through "messages">"inbox" and then sort the folders by name</li>
+            <li>Select a specific conversation folder. Group conversations are somewhat supported, individual work better.</li>
+            <li>Select the "message_1.json" file - if there is more than then select this first</li>
+            <li>Now click the "Import" button</li>
+            <li>If there was more than one file then select another and click, starting with "message_2" then "message_3" etc. Click the "Import" button after each time you have selected a new file</li>
+            <li>If you choose a different conversation the chart will be cleared</li>
+            <li>Hover over the  bars to see the totals sent.</li>
+            <li>Click a bar to see the messages from that time period in the text box next to the graph</li>
+            <li>Select the "clock" option to see the time distribution of messages</li>
+            <li>Use the date selectors to change the range, locking the date means it will not auto scale with any new import</li>
+            <li>Save the selection to save that message data for quick access by hitting the button in the list to reload it</li>
+            <li>Adding information overlays to the graphic and then export it as a png by using the "export image options" area</li>
+
+        </ol>
+    </div>
+
+
+
+</body>
+
+</html>
