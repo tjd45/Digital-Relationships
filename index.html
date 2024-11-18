@@ -19,6 +19,12 @@
 			font-size: 15px;
 		}
 
+		#anonEnter{
+			color: blue;      
+    		text-decoration: underline; 
+    		cursor: pointer;  
+		}
+
 		#svg-graph {
 			background-color: black;
 			margin-right: 8px;
@@ -488,6 +494,10 @@
 				If this is your first time visiting the site then please read the <a href="instructions.html">Download and Usage Instructions</a>
 				<br />
 				<br />
+				If you would like to explore the website using anonymised data from the author's messaging history please <span id="anonEnter">click here</span>.
+				If you would then like to explore with your own data simply refresh the page.
+				<br />
+				<br />
 				Data Privacy: <b> None </b> of the data from your message files is at <b>any</b> point uploaded or
 				stored anywhere other than your computer. All processing takes place on your local machine.
 				<br />
@@ -510,6 +520,27 @@
 		var statsString = []
 		var autoResize = true
 		var messageTextBox = ""
+
+		const anonColours = [
+			"#FF5733", // Bright Red-Orange
+			"#FFC300", // Bright Yellow
+			"#DAF7A6", // Light Lime Green
+			"#FF33FF", // Magenta
+			"#33FF57", // Bright Green
+			"#FF8C33", // Deep Orange
+			"#FFF033", // Lemon Yellow
+			"#33FFF0", // Aqua
+			"#F033FF", // Purple
+			"#FF3357", // Deep Pink-Red
+			"#57FF33", // Neon Green
+			"#FF5733", // Coral
+			"#FF33A6", // Bright Pink
+			"#A6FF33", // Chartreuse
+			"#3357FF", // Bright Blue (avoiding standard blue)
+			"#FF7F50", // Coral Orange
+			"#FFD700", // Gold
+			"#7FFF00", // Chartreuse Green
+		];
 
 		document.getElementById("modalUname").addEventListener("keyup", function (event) {
 			if (event.keyCode === 13) {
@@ -544,6 +575,16 @@
 				document.getElementById('uname').value = userName
 				document.getElementById('modal').style.display = "none"
 			};
+
+			document.getElementById('anonEnter').onclick = function () {
+				console.log("Entering with anonymous data")
+				document.getElementById('modal').style.display = "none"
+
+				userName = "Person_0"
+				document.getElementById('uname').value = userName
+				loadAndSaveAllConvos()
+
+			}
 		};
 
 		var parseTime = d3.timeParse("%d/%m/%Y")
@@ -586,6 +627,101 @@
 		var defaultReceiveColour = "#00ff00"
 
 		var offsets = {}
+
+		async function loadAndSaveAllConvos(){
+			console.log("Loading all conversations")
+
+			const basePath = 'anonymous_data';
+			const totalConversations = 18;
+
+			const extraFiles = { 
+				"Conv_6": ["message_2.json"], 
+				"Conv_11": ["message_2.json"], 
+				"Conv_13": ["message_2.json"] 
+			};
+
+			for (let i = 0; i<= totalConversations; i++){
+				const folder = `Conv_${i}`;
+
+				const filesToLoad = ["message_1.json"];
+
+				if (extraFiles[folder]) {
+            		filesToLoad.push(...extraFiles[folder]);
+        		}
+
+				for (const file of filesToLoad){
+					const filePath = `${basePath}/${folder}/${file}`;
+
+					console.log(filePath)
+
+					try{
+						const response = await fetch(filePath);
+						if (!response.ok){
+							console.error(`Failed to load file: ${filePath}`);
+							continue;
+						}
+
+						var convoData = await response.json();
+						if(sameParticipants(currentJson, convoData)){
+							var newConvoData = combineJson(currentJson, convoData)
+							convoData = newConvoData
+						}else{
+							messageTextBox=""
+						}
+						
+						currentJson = convoData
+
+						rcvColour = anonColours[i]
+						if (currentJson)
+							colourMap[currentJson.title] = rcvColour
+
+						updateDateRange(convoData)
+
+						if (!lockedDates && document.getElementById('lockDates').disabled) {
+								document.getElementById('lockDates').disabled = false
+							}
+
+						redraw(convoData)
+
+						if (currentJson) {
+
+						const thisConv = currentJson.title
+
+
+
+						if (!oldJson[thisConv]) {
+							console.log(currentJson)
+
+							d3.select("#previousSelections").append("li").append("button").text(currentJson.title)
+								.on('click', function (d) {
+									console.log(thisConv)
+									messageTextBox = ""
+									currentJson = oldJson[thisConv]
+
+									updateDateRange(currentJson)
+									redraw(currentJson)
+
+								})
+						}
+
+						oldJson[currentJson.title] = currentJson
+
+						}
+
+						
+
+					} catch(error){
+						console.error(`Error loading ${filePath}:`,error);
+					}
+				}
+
+				
+				
+
+			}
+
+
+		}
 
 		function updateSavedSelections(data) {
 			var savedSelections = d3.select("previousSelections")

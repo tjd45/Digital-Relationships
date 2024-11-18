@@ -1,0 +1,34 @@
+{
+    "participants": [
+        {
+            "name": "Person_0"
+        },
+        {
+            "name": "Person_1"
+        }
+    ],
+    "messages": [
+        {
+            "sender_name": "Person_1",
+            "timestamp_ms": 1503240867866,
+            "content": "**** * **** *** **** ****** *** ** **** ** *** **** *** **** ******* ** *********** *** *** *** ** *** **** ******* **** *** *** ********* **** ****** *** **** ** *** *** ****** ******* **",
+            "type": "Generic"
+        },
+        {
+            "sender_name": "Person_0",
+            "timestamp_ms": 1281545274000,
+            "content": "**** * ***** ** **** ******* **** *** ******* ********* ******* **** *****",
+            "type": "Generic"
+        },
+        {
+            "sender_name": "Person_1",
+            "timestamp_ms": 1281543662000,
+            "content": "*** **** * * ***** *** ***** ** ** ** ** ********* *** **** *** **** ****** * *** **** ** *** * ********** ******** ****",
+            "type": "Generic"
+        }
+    ],
+    "title": "Other Participant(s)_14",
+    "is_still_participant": true,
+    "thread_type": "Regular",
+    "thread_path": "redacted"
+}
